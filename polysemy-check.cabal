@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       Orphans
+      Polysemy.Internal.Union.Inject
   other-modules:
       Paths_polysemy_check
   hs-source-dirs:
