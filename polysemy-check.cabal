@@ -1,0 +1,40 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           polysemy-check
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/polysemy-research/polysemy-check#readme>
+homepage:       https://github.com/polysemy-research/polysemy-check#readme
+bug-reports:    https://github.com/polysemy-research/polysemy-check/issues
+author:         Sandy Maguire
+maintainer:     sandy@sandymaguire.me
+copyright:      Sandy Maguire
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/polysemy-research/polysemy-check
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_polysemy_check
+  hs-source-dirs:
+      src
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+    , kind-generics
+    , kind-generics-th
+    , polysemy
+  default-language: Haskell2010
