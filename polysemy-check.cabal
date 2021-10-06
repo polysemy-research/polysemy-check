@@ -68,6 +68,7 @@ test-suite test
   main-is: Main.hs
   other-modules:
       CommutativeSpec
+      EquivSpec
       LawSpec
       Paths_polysemy_check
   hs-source-dirs:

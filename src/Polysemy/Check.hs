@@ -1,6 +1,6 @@
 module Polysemy.Check
   ( prepropCommutative
-  , prepropEquivInterpreters
+  , prepropEquivalent
   , prepropLaw
   ) where
 
@@ -52,14 +52,14 @@ prepropLaw g lower = property $ do
     pure $ a1 === a2
 
 
-prepropEquivInterpreters
+prepropEquivalent
     :: forall effs x r1 r2
      . (Eq x, Show x, Inject effs r1, Inject effs r2, Members effs effs)
     => (forall a. Sem r1 a -> IO a)
     -> (forall a. Sem r2 a -> IO a)
     -> (forall r. Members effs r => Gen (Sem r x))
     -> Property
-prepropEquivInterpreters int1 int2 mksem = property $ do
+prepropEquivalent int1 int2 mksem = property $ do
   SomeSem sem <- liftGen @effs @x mksem
   pure $ ioProperty $ do
     a1 <- int1 sem

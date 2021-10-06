@@ -13,7 +13,7 @@ class Inject effs r where
 instance Inject '[] r where
   deject = absurdU
 
-instance Inject r r where
+instance {-# INCOHERENT #-} Inject r r where
   deject = id
 
 instance (Member eff r, Inject effs r) => Inject (eff ': effs) r where
