@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       Orphans
+      Polysemy.Check
       Polysemy.Check.AnyEff
       Polysemy.Check.Arbitrary
       Polysemy.Internal.Union.Inject
