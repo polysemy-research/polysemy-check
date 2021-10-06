@@ -1,125 +1,17 @@
-{-# OPTIONS_GHC -Wredundant-constraints #-}
-
 module Lib where
 
-import Control.Applicative (liftA2)
-import Data.Kind (Type, Constraint)
-import GHC.Exts (type (~~))
-import Generics.Kind
 import Orphans ()
 import Polysemy
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Polysemy.Law
 import Polysemy.State
-import Type.Reflection
-
-
-type family TypesOf (f :: LoT Effect -> Type) :: [Type] where
-  TypesOf (M1 _1 _2 f) = TypesOf f
-  TypesOf (f :+: g) = Append (TypesOf f) (TypesOf g)
-  TypesOf (('Kon (~~) ':@: Var1 ':@: 'Kon a) :=>: f) = '[a]
-  TypesOf (('Kon ((~~) a) ':@: Var1) :=>: f) = '[a]
-
-
-
-type a :~~~: b = 'Kon (~~) ':@: a ':@: b
-
-------------------------------------------------------------------------------
-
-
-------------------------------------------------------------------------------
-
-class GArbitraryK (a :: Type) (f :: LoT Type -> Type) where
-  garbitraryk :: [Gen (f x)]
-
-instance GArbitraryK a U1 where
-  garbitraryk = pure $ pure U1
-
-instance (GArbitraryK a f, GArbitraryK a g) => GArbitraryK a (f :*: g) where
-  garbitraryk = liftA2 (liftA2 (:*:)) (garbitraryk @a) (garbitraryk @a)
-
-instance (GArbitraryK a f, GArbitraryK a g) => GArbitraryK a (f :+: g) where
-  garbitraryk = fmap (fmap L1) (garbitraryk @a @f)
-             <> fmap (fmap R1) (garbitraryk @a @g)
-
-instance GArbitraryK1 f => GArbitraryK a ('Kon (a ~~ a) :=>: f) where
-  garbitraryk = fmap SuchThat <$> garbitraryk1
-
-instance {-# INCOHERENT #-} GArbitraryK a ('Kon (a ~~ b) :=>: f) where
-  garbitraryk = []
-
-instance {-# INCOHERENT #-} GArbitraryK a ('Kon (b ~~ c) :=>: f) where
-  garbitraryk = []
-
-instance (GArbitraryK a f) => GArbitraryK a (M1 _1 _2 f) where
-  garbitraryk = fmap M1 <$> garbitraryk @a
-
-------------------------------------------------------------------------------
-
-type family ArbitraryForAll (as :: [Type]) (m :: Type -> Type) :: Constraint where
-  ArbitraryForAll '[] f = ()
-  ArbitraryForAll (a ': as) f = (Eq a, Show a, GArbitraryK a (RepK (f a)), ArbitraryForAll as f)
-
-type Yo e m = ArbitraryForAll (TypesOf (RepK e)) (e m)
-
-------------------------------------------------------------------------------
-
-debugEffGen :: forall e a m. (GArbitraryK a (RepK (e m a)), GenericK (e m a)) => Gen (e m a)
-debugEffGen = fmap toK $ oneof $ garbitraryk @a @(RepK (e m a))
-
----
-
-data SomeEff e (r :: EffectRow) where
-  SomeEff :: (Member e r, Eq a, Show a, Show (e (Sem r) a)) => e (Sem r) a -> SomeEff e r
-
-instance Show (SomeEff e r) where
-  show (SomeEff ema) = show ema
-
-instance Show (SomeSomeEff r) where
-  show (SomeSomeEff sse) = show sse
-
-
-data SomeSomeEff (r :: EffectRow) where
-  SomeSomeEff :: SomeEff e r -> SomeSomeEff r
-
-class GetAnEffGen (es :: EffectRow) (r :: EffectRow) where
-  getAnEffGen :: [Gen (SomeSomeEff r)]
-
-class GetAParticularEffGen (as :: [Type]) (e :: Effect) (r :: EffectRow) where
-  getAParticularEffGen :: [Gen (SomeEff e r)]
-
-instance GetAParticularEffGen '[] e r where
-  getAParticularEffGen = []
-
-instance
-    ( GetAParticularEffGen as e r
-    , Eq a
-    , Show a
-    , Member e r
-    , Show (e (Sem r) a)
-    , GenericK (e (Sem r) a)
-    , GArbitraryK a (RepK (e (Sem r) a))
-    )
-    => GetAParticularEffGen (a : as) e r
-    where
-  getAParticularEffGen = (fmap SomeEff $ debugEffGen @e @a @(Sem r)) : getAParticularEffGen @as @e @r
-
-instance GetAnEffGen '[] r where
-  getAnEffGen = []
-
-instance
-    (GetAnEffGen es r, GetAParticularEffGen (TypesOf (RepK e)) e r)
-    => GetAnEffGen (e ': es) r
-    where
-  getAnEffGen = fmap (fmap SomeSomeEff) (getAParticularEffGen @(TypesOf (RepK e)) @e @r)
-             <> getAnEffGen @es @r
+import Polysemy.Check.AnyEff
 
 
 prop_writerStateComm :: Property
 prop_writerStateComm =
   prepropCommutative @(State Int) @(State Int) @'[State Int, State Int] $ pure . run . evalState 0 . subsume
-
 
 
 prepropCommutative
@@ -147,41 +39,6 @@ prepropCommutative lower = property @(Gen Property) $ do
         r1 <- lower $ send e1 >> send e2 >> send m
         r2 <- lower $ send e2 >> send e1 >> send m
         pure $ r1 === r2
-
-
-
----
-
-
-synthesizeAny
-    :: forall e a m
-     . (GArbitraryK a (RepK (e m a)), GenericK (e m a))
-    => TypeRep a
-    -> Maybe (Gen (e m a))
-synthesizeAny _ =
-  case garbitraryk @a @(RepK (e m a)) of
-    [] -> Nothing
-    a -> Just $ fmap toK $ oneof a
-
-
-------------------------------------------------------------------------------
-
-class GArbitraryK1 (f :: LoT Type -> Type) where
-  garbitraryk1 :: [Gen (f x)]
-
-instance (GArbitraryK1 f, GArbitraryK1 g) => GArbitraryK1 (f :*: g) where
-  garbitraryk1 = liftA2 (liftA2 (:*:)) garbitraryk1 garbitraryk1
-
-instance Arbitrary t => GArbitraryK1 (Field ('Kon t)) where
-  garbitraryk1 = pure $ fmap Field arbitrary
-
-instance (GArbitraryK1 f) => GArbitraryK1 (M1 _1 _2 f) where
-  garbitraryk1 = fmap M1 <$> garbitraryk1
-
-instance GArbitraryK1 U1 where
-  garbitraryk1 = pure $ pure U1
-
-
 
 
 -- test :: Property
@@ -213,6 +70,7 @@ prepropLaw g lower = property $ do
     a1 <- lower m1
     a2 <- lower m2
     pure $ a1 === a2
+
 
 stateLaw2
     :: forall s r x
@@ -248,9 +106,6 @@ mkCounterexampleString str1 a str2 b args =
     ]
 
 
-
-
-
 prepropEquivInterpreters
     :: forall effs x r1 r2
      . (Eq x, Show x, Inject effs r1, Inject effs r2, Members effs effs)
@@ -265,9 +120,11 @@ prepropEquivInterpreters int1 int2 mksem = property $ do
     a2 <- int2 sem
     pure $ a1 === a2
 
+
 newtype SomeSem effs a = SomeSem
   { getSomeSem :: forall r. (Inject effs r) => Sem r a
   }
+
 
 liftGen
     :: forall effs a
@@ -277,3 +134,4 @@ liftGen
 liftGen g = do
   a <- g @effs
   pure $ SomeSem $ inject a
+
