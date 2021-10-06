@@ -30,6 +30,25 @@ library
       Paths_polysemy_check
   hs-source-dirs:
       src
+  default-extensions:
+      AllowAmbiguousTypes
+      ConstraintKinds
+      DataKinds
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      LambdaCase
+      MultiParamTypeClasses
+      PolyKinds
+      RankNTypes
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      UndecidableInstances
+  ghc-options: -Wall
   build-depends:
       QuickCheck
     , base >=4.7 && <5

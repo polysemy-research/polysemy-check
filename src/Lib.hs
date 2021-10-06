@@ -1,59 +1,23 @@
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
-
 {-# OPTIONS_GHC -Wredundant-constraints #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Lib where
 
 import           Control.Applicative (liftA2)
-import           Control.Monad (guard, void)
-import           Data.Coerce (coerce)
-import           Data.Data (Proxy(Proxy), Data)
 import           Data.Foldable (traverse_)
-import           Data.Function (on)
-import           Data.Functor.Classes (Eq1)
-import           Data.Functor.Const
-import           Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import           Data.Kind (Type, Constraint)
-import           Data.Maybe (isJust, fromMaybe, maybeToList)
 import           Data.Set (Set)
 import qualified Data.Set as S
-import           Data.Typeable ((:~:))
-import           Data.Typeable (Typeable)
-import           Debug.Trace (traceM)
 import           GHC.Exts (type (~~))
-import           GHC.Generics (Generic, Generic1)
 import           Generics.Kind
 import           Generics.Kind.TH
 import           Polysemy
 import           Polysemy.Internal
-import           Polysemy.Internal (send, liftSem)
 import           Polysemy.Internal.Union
 import           Polysemy.Law
 import           Polysemy.Output
 import           Polysemy.State
-import           Polysemy.State (State)
-import           Polysemy.State hiding (State(..))
-import           Test.QuickCheck (quickCheck, Gen, Positive(..), Property, arbitrary, elements, frequency, shrink, (===), discard, ioProperty, property)
-import           Test.QuickCheck.Gen (oneof)
-import           Test.QuickCheck.Monadic (monadicIO)
 import           Type.Reflection
-import           Unsafe.Coerce
 
 
 data ATypeRep where
@@ -215,7 +179,7 @@ prepropCommutative
        )
     => (forall a. Sem r a -> IO a)
     -> Property
-prepropCommutative run = property @(Gen Property) $ do
+prepropCommutative lower = property @(Gen Property) $ do
   SomeSomeEff (SomeEff m) <- oneof $ getAnEffGen @r @r
   SomeSomeEff (SomeEff e1) <- oneof $ getAnEffGen @'[e1] @r
   SomeSomeEff (SomeEff e2) <- oneof $ getAnEffGen @'[e2] @r
@@ -229,8 +193,8 @@ prepropCommutative run = property @(Gen Property) $ do
     counterexample "(e1 >> e2 >> k) /= (e2 >> e1 >> k)" $
     counterexample "" $
       ioProperty $ do
-        r1 <- run $ send e1 >> send e2 >> send m
-        r2 <- run $ send e2 >> send e1 >> send m
+        r1 <- lower $ send e1 >> send e2 >> send m
+        r2 <- lower $ send e2 >> send e1 >> send m
         pure $ r1 === r2
 
 
@@ -274,7 +238,7 @@ debugSet :: Set ATypeRep -> IO ()
 debugSet = traverse_ $ \(ATypeRep tr) -> do
   case synthesizeAny @CircleBuffer tr of
     Nothing -> print "(impossible)"
-    Just gen -> generate gen >>= print
+    Just g -> generate g >>= print
 
 
 
@@ -301,11 +265,11 @@ prepropLaw
     => Gen (Sem r a, Sem r a)
     -> (Sem r a -> IO x)
     -> Property
-prepropLaw g run = property $ do
+prepropLaw g lower = property $ do
   (m1, m2) <- g
   pure $ ioProperty $ do
-    a1 <- run m1
-    a2 <- run m2
+    a1 <- lower m1
+    a2 <- lower m2
     pure $ a1 === a2
 
 stateLaw2
