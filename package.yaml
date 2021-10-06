@@ -64,4 +64,5 @@ tests:
     - hspec-discover >= 2.0
     dependencies:
     - polysemy-check
+    - polysemy-plugin
     - hspec
