@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Orphans () where
+module Polysemy.Check.Orphans () where
 
 import Generics.Kind.TH
 import Polysemy

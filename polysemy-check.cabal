@@ -26,10 +26,10 @@ source-repository head
 library
   exposed-modules:
       Lib
-      Orphans
       Polysemy.Check
       Polysemy.Check.AnyEff
       Polysemy.Check.Arbitrary
+      Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
   other-modules:
       Paths_polysemy_check

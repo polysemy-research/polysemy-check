@@ -1,8 +1,8 @@
 module Lib where
 
-import Orphans ()
 import Polysemy
 import Polysemy.Check
+import Polysemy.Check.Orphans ()
 import Polysemy.State
 import Test.QuickCheck
 
