@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wredundant-constraints #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Lib where
 
@@ -11,11 +10,11 @@ import qualified Data.Set as S
 import           GHC.Exts (type (~~))
 import           Generics.Kind
 import           Generics.Kind.TH
+import           Orphans ()
 import           Polysemy
 import           Polysemy.Internal
 import           Polysemy.Internal.Union
 import           Polysemy.Law
-import           Polysemy.Output
 import           Polysemy.State
 import           Type.Reflection
 
@@ -51,11 +50,6 @@ makeSem ''CircleBuffer
 deriveGenericK ''CircleBuffer
 deriveGenericK ''Worker
 
-deriveGenericK ''State
-deriveGenericK ''Output
-
-deriving instance Show s => Show (State s (Sem r) a)
-deriving instance Show o => Show (Output o (Sem r) a)
 
 type a :~~~: b = 'Kon (~~) ':@: a ':@: b
 

@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Orphans
   other-modules:
       Paths_polysemy_check
   hs-source-dirs:
