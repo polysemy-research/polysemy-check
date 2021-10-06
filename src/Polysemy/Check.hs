@@ -8,6 +8,7 @@ import Polysemy
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Polysemy.Check.AnyEff
+import Polysemy.Check.Orphans ()
 import Test.QuickCheck
 
 

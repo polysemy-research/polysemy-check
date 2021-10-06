@@ -62,3 +62,43 @@ library
     , kind-generics-th
     , polysemy
   default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      CommutativeSpec
+      Paths_polysemy_check
+  hs-source-dirs:
+      test
+  default-extensions:
+      AllowAmbiguousTypes
+      ConstraintKinds
+      DataKinds
+      FlexibleContexts
+      FlexibleInstances
+      GADTs
+      LambdaCase
+      MultiParamTypeClasses
+      PolyKinds
+      RankNTypes
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      UndecidableInstances
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      hspec-discover:hspec-discover >=2.0
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+    , hspec
+    , kind-generics
+    , kind-generics-th
+    , polysemy
+    , polysemy-check
+  default-language: Haskell2010

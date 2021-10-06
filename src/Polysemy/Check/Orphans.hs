@@ -37,6 +37,7 @@ deriving instance Show s => Show (State s (Sem r) a)
 deriving instance Show o => Show (Output o (Sem r) a)
 deriving instance Show i => Show (Input i (Sem r) a)
 deriving instance Show (Fail (Sem r) a)
+deriving instance Show (Trace (Sem r) a)
 
 instance Show e => Show (Error e (Sem r) a) where
   show (Throw e2) = "Throw " <> show e2
