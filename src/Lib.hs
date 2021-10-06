@@ -6,7 +6,6 @@ import Control.Applicative (liftA2)
 import Data.Kind (Type, Constraint)
 import GHC.Exts (type (~~))
 import Generics.Kind
-import Generics.Kind.TH
 import Orphans ()
 import Polysemy
 import Polysemy.Internal
@@ -22,21 +21,6 @@ type family TypesOf (f :: LoT Effect -> Type) :: [Type] where
   TypesOf (('Kon (~~) ':@: Var1 ':@: 'Kon a) :=>: f) = '[a]
   TypesOf (('Kon ((~~) a) ':@: Var1) :=>: f) = '[a]
 
-data CircleBuffer m a where
-  PutE :: Int -> CircleBuffer m ()
-  GetE :: CircleBuffer m Int
-  LenE :: CircleBuffer m Int
-
-deriving instance Show (CircleBuffer m a)
-
-data Worker m a where
-  Worker :: Bool -> Int -> Worker m ()
-
-deriving instance Show (Worker m ())
-
-makeSem ''CircleBuffer
-deriveGenericK ''CircleBuffer
-deriveGenericK ''Worker
 
 
 type a :~~~: b = 'Kon (~~) ':@: a ':@: b
@@ -83,9 +67,6 @@ type Yo e m = ArbitraryForAll (TypesOf (RepK e)) (e m)
 
 debugEffGen :: forall e a m. (GArbitraryK a (RepK (e m a)), GenericK (e m a)) => Gen (e m a)
 debugEffGen = fmap toK $ oneof $ garbitraryk @a @(RepK (e m a))
-
-debugGen :: Yo CircleBuffer m => Gen (CircleBuffer m Int)
-debugGen = debugEffGen
 
 ---
 
@@ -210,15 +191,15 @@ instance GArbitraryK1 U1 where
 --       (pure . run . runCircleBufferSpec 5)
 --     $ gen
 
-gen :: Member CircleBuffer r => Gen (Sem r Int)
-gen = oneof
-  [ do
-      n <- arbitrary
-      k <- gen
-      pure $ putE n >> k
-  , pure getE
-  , pure lenE
-  ]
+-- gen :: Member CircleBuffer r => Gen (Sem r Int)
+-- gen = oneof
+--   [ do
+--       n <- arbitrary
+--       k <- gen
+--       pure $ putE n >> k
+--   , pure getE
+--   , pure lenE
+--   ]
 
 
 prepropLaw
