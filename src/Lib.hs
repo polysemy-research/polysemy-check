@@ -2,31 +2,19 @@
 
 module Lib where
 
-import           Control.Applicative (liftA2)
-import           Data.Foldable (traverse_)
-import           Data.Kind (Type, Constraint)
-import           Data.Set (Set)
-import qualified Data.Set as S
-import           GHC.Exts (type (~~))
-import           Generics.Kind
-import           Generics.Kind.TH
-import           Orphans ()
-import           Polysemy
-import           Polysemy.Internal
-import           Polysemy.Internal.Union
-import           Polysemy.Law
-import           Polysemy.State
-import           Type.Reflection
+import Control.Applicative (liftA2)
+import Data.Kind (Type, Constraint)
+import GHC.Exts (type (~~))
+import Generics.Kind
+import Generics.Kind.TH
+import Orphans ()
+import Polysemy
+import Polysemy.Internal
+import Polysemy.Internal.Union
+import Polysemy.Law
+import Polysemy.State
+import Type.Reflection
 
-
-data ATypeRep where
-  ATypeRep :: TypeRep (a :: Type) -> ATypeRep
-
-instance Eq ATypeRep where
-  ATypeRep a == ATypeRep b = (==) (SomeTypeRep a) (SomeTypeRep b)
-
-instance Ord ATypeRep where
-  ATypeRep a `compare` ATypeRep b = compare (SomeTypeRep a) (SomeTypeRep b)
 
 type family TypesOf (f :: LoT Effect -> Type) :: [Type] where
   TypesOf (M1 _1 _2 f) = TypesOf f
@@ -54,18 +42,6 @@ deriveGenericK ''Worker
 type a :~~~: b = 'Kon (~~) ':@: a ':@: b
 
 ------------------------------------------------------------------------------
-
-class GTypesOf (f :: LoT Effect -> Type) where
-  gtypesofk :: Set ATypeRep
-
-instance (GTypesOf f, GTypesOf g) => GTypesOf (f :+: g) where
-  gtypesofk = gtypesofk @f <> gtypesofk @g
-
-instance Typeable a => GTypesOf (Var1 :~~~: 'Kon (a :: Type) :=>: _1) where
-  gtypesofk = S.singleton $ ATypeRep $ typeRep @a
-
-instance (GTypesOf f) => GTypesOf (M1 _1 _2 f) where
-  gtypesofk = gtypesofk @f
 
 
 ------------------------------------------------------------------------------
@@ -224,15 +200,6 @@ instance (GArbitraryK1 f) => GArbitraryK1 (M1 _1 _2 f) where
 instance GArbitraryK1 U1 where
   garbitraryk1 = pure $ pure U1
 
-
-types :: Set ATypeRep
-types = gtypesofk @(RepK CircleBuffer)
-
-debugSet :: Set ATypeRep -> IO ()
-debugSet = traverse_ $ \(ATypeRep tr) -> do
-  case synthesizeAny @CircleBuffer tr of
-    Nothing -> print "(impossible)"
-    Just g -> generate g >>= print
 
 
 
