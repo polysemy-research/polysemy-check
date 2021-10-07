@@ -11,8 +11,11 @@ import Test.QuickCheck
 
 type a :~~~: b = 'Kon (~~) ':@: a ':@: b
 
-------------------------------------------------------------------------------
 
+------------------------------------------------------------------------------
+-- | Given @'GArbitraryK' a ('RepK' (e m a))@, this typeclass computes
+-- generators for every well-typed constructor of @e m a@. It is capable of
+-- building generators for GADTs.
 class GArbitraryK (a :: Type) (f :: LoT Type -> Type) where
   garbitraryk :: [Gen (f x)]
 
@@ -38,11 +41,17 @@ instance {-# INCOHERENT #-} GArbitraryK a ('Kon (b ~~ c) :=>: f) where
 instance (GArbitraryK a f) => GArbitraryK a (M1 _1 _2 f) where
   garbitraryk = fmap M1 <$> garbitraryk @a
 
-debugEffGen :: forall e a m. (GArbitraryK a (RepK (e m a)), GenericK (e m a)) => Gen (e m a)
-debugEffGen = fmap toK $ oneof $ garbitraryk @a @(RepK (e m a))
 
 ------------------------------------------------------------------------------
+-- | @genEff \@e \@a \@m@ gets a generator capable of producing every
+-- well-typed GADT constructor of @e m a@.
+genEff :: forall e a m. (GArbitraryK a (RepK (e m a)), GenericK (e m a)) => Gen (e m a)
+genEff = fmap toK $ oneof $ garbitraryk @a @(RepK (e m a))
 
+
+------------------------------------------------------------------------------
+-- | Like @GArbitraryK@, but gets run after we've already discharged the @a
+-- ~ T@ GADT constraint.
 class GArbitraryK1 (f :: LoT Type -> Type) where
   garbitraryk1 :: [Gen (f x)]
 

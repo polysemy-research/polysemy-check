@@ -61,7 +61,7 @@ instance
     )
     => GetAParticularEffGen (a : as) e r
     where
-  getAParticularEffGen = (fmap SomeEff $ debugEffGen @e @a @(Sem r)) : getAParticularEffGen @as @e @r
+  getAParticularEffGen = (fmap SomeEff $ genEff @e @a @(Sem r)) : getAParticularEffGen @as @e @r
 
 instance GetAnEffGen '[] r where
   getAnEffGen = []
