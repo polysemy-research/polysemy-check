@@ -35,17 +35,17 @@ import Test.QuickCheck
 -- entire computation.
 prepropCommutative
     :: forall e1 e2 r
-     . ( GetAnEffGen r r
-       , GetAnEffGen '[e1] r
-       , GetAnEffGen '[e2] r
+     . ( GenerateSomeEff r r
+       , GenerateSomeEff '[e1] r
+       , GenerateSomeEff '[e2] r
        )
     => (forall a. Sem r a -> IO a)
     -> Property
 prepropCommutative lower = property @(Gen Property) $ do
-  SomeSomeEff (SomeEff m1) <- oneof $ getAnEffGen @r @r
-  SomeSomeEff (SomeEff e1) <- oneof $ getAnEffGen @'[e1] @r
-  SomeSomeEff (SomeEff e2) <- oneof $ getAnEffGen @'[e2] @r
-  SomeSomeEff (SomeEff m2) <- oneof $ getAnEffGen @r @r
+  SomeEff (SomeAction m1) <- oneof $ genSomeEff @r @r
+  SomeEff (SomeAction e1) <- oneof $ genSomeEff @'[e1] @r
+  SomeEff (SomeAction e2) <- oneof $ genSomeEff @'[e2] @r
+  SomeEff (SomeAction m2) <- oneof $ genSomeEff @r @r
   pure $
     counterexample "Effects are not commutative!" $
     counterexample "" $
