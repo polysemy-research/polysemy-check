@@ -1,12 +1,24 @@
-module Polysemy.Internal.Union.Inject (Inject, inject) where
+module Polysemy.Internal.Union.Inject
+  ( inject
+  , Inject
+  ) where
 
 import Polysemy.Internal
 import Polysemy.Internal.Union
 
 
+------------------------------------------------------------------------------
+-- | Morally:
+--
+-- @
+-- 'inject' :: 'Members' effs r => 'Sem' effs a -> 'Sem' r a
+-- @
 inject :: Inject effs r => Sem effs a -> Sem r a
 inject (Sem a) = a $ liftSem . deject . hoist inject
 
+
+------------------------------------------------------------------------------
+-- | Helper class for munging the 'Union' so that we can implement 'inject'.
 class Inject effs r where
   deject :: Union effs (Sem r) a -> Union r (Sem r) a
 
