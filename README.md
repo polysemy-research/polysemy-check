@@ -1,5 +1,7 @@
 # polysemy-check
 
+[![Hackage](https://img.shields.io/hackage/v/polysemy-check.svg?logo=haskell&label=polysemy-check)](https://hackage.haskell.org/package/polysemy-check)
+
 ## Dedication
 
 > Success is most often achieved by those who don't know that failure is
