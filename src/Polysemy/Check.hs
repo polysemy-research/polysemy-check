@@ -62,9 +62,10 @@ import Test.QuickCheck
 -- entire computation.
 prepropCommutative
     :: forall e1 e2 r f
-     . ( (forall a. Show a => Show (f a))
-       , (forall a. Eq a => Eq (f a))
-       , ArbitraryEff r r
+     . ( forall a. Show a => Show (f a)
+       , forall a. Eq a => Eq (f a)
+       )
+    => ( ArbitraryEff r r
        , ArbitraryEff '[e1] r
        , ArbitraryEff '[e2] r
        )
