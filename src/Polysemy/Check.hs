@@ -1,3 +1,4 @@
+{-# LANGUAGE QuantifiedConstraints #-}
 module Polysemy.Check
   ( -- * Effect Properties
     prepropCommutative
@@ -27,16 +28,16 @@ module Polysemy.Check
   , GenericK
   ) where
 
+import Generics.Kind (GenericK)
 import Generics.Kind.TH (deriveGenericK)
 import Polysemy
 import Polysemy.Check.Arbitrary
 import Polysemy.Check.Arbitrary.AnyEff
+import Polysemy.Check.Arbitrary.Generic (GArbitraryK)
 import Polysemy.Check.Orphans ()
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Test.QuickCheck
-import Generics.Kind (GenericK)
-import Polysemy.Check.Arbitrary.Generic (GArbitraryK)
 
 
 ------------------------------------------------------------------------------
@@ -59,12 +60,14 @@ import Polysemy.Check.Arbitrary.Generic (GArbitraryK)
 -- permuting the @State Int@ and @Trace@ effects changes the outcome of the
 -- entire computation.
 prepropCommutative
-    :: forall e1 e2 r
-     . ( ArbitraryEff r r
+    :: forall e1 e2 r f
+     . ( (forall a. Show a => Show (f a))
+       , (forall a. Eq a => Eq (f a))
+       , ArbitraryEff r r
        , ArbitraryEff '[e1] r
        , ArbitraryEff '[e2] r
        )
-    => (forall a. Sem r a -> IO a)
+    => (forall a. Sem r a -> IO (f a))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
@@ -82,7 +85,6 @@ prepropCommutative lower = property @(Gen Property) $ do
     counterexample ("k2  = " <> show m2) $
     counterexample "" $
     counterexample "(e1 >> e2 >> k) /= (e2 >> e1 >> k)" $
-    counterexample "" $
       ioProperty $ do
         r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
         r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
