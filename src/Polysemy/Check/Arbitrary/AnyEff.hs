@@ -5,7 +5,7 @@ import GHC.Exts (type (~~))
 import Generics.Kind
 import Polysemy
 import Polysemy.Internal
-import Polysemy.Check.Arbitrary.Generic
+import {-# SOURCE #-} Polysemy.Check.Arbitrary.Generic
 import Test.QuickCheck
 
 
@@ -16,6 +16,9 @@ type family GTypesOf (f :: LoT Effect -> Type) :: [Type] where
   GTypesOf (f :+: g) = Append (GTypesOf f) (GTypesOf g)
   GTypesOf (('Kon (~~) ':@: Var1 ':@: 'Kon a) :=>: f) = '[a]
   GTypesOf (('Kon ((~~) a) ':@: Var1) :=>: f) = '[a]
+  -- Otherwise, we don't have any constraints on @a@, so we can instantiate it
+  -- how we please. Just assume ().
+  GTypesOf _1 = '[()]
 
 
 ------------------------------------------------------------------------------
