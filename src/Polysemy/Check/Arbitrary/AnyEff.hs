@@ -45,7 +45,7 @@ type family ArbitraryForAll (as :: [Type]) (m :: Type -> Type) :: Constraint whe
 -- | @'SomeAction' e r@ is some action for effect @e@ in effect row @r@.
 data SomeAction e (r :: EffectRow) where
   SomeAction
-      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
       => e (Sem r) a
          -- ^
       -> SomeAction e r
@@ -62,7 +62,7 @@ instance Show (SomeEff r) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEff (r :: EffectRow) where
   SomeEff
-      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
       => e (Sem r) a
          -- ^
       -> SomeEff r
@@ -72,7 +72,7 @@ data SomeEff (r :: EffectRow) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEffOfType (r :: EffectRow) a where
   SomeEffOfType
-      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
       => e (Sem r) a
          -- ^
       -> SomeEffOfType r a
@@ -111,6 +111,7 @@ instance
     , ArbitraryEffOfType a es r
     , GenericK (e (Sem r) a)
     , GArbitraryK a (RepK (e (Sem r) a))
+    , CoArbitrary a
     , Member e r
     )
     => ArbitraryEffOfType a (e ': es) r
@@ -136,6 +137,7 @@ instance
     , Member e r
     , Show (e (Sem r) a)
     , GenericK (e (Sem r) a)
+    , CoArbitrary a
     , GArbitraryK a (RepK (e (Sem r) a))
     )
     => ArbitraryAction (a : as) e r
