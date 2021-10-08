@@ -1,7 +1,16 @@
 module Polysemy.Check
-  ( prepropCommutative
+  ( -- * Property Generators
+    prepropCommutative
   , prepropEquivalent
   , prepropLaw
+
+    -- * Generators for Effects
+  , arbitraryAction
+  , arbitraryActionOfType
+  , arbitraryActionFromRow
+  , arbitraryActionFromRowOfType
+
+    -- * Re-exports
   , deriveGenericK
   ) where
 
@@ -35,19 +44,19 @@ import Test.QuickCheck
 -- entire computation.
 prepropCommutative
     :: forall e1 e2 r
-     . ( GenerateSomeEff r r
-       , GenerateSomeEff '[e1] r
-       , GenerateSomeEff '[e2] r
+     . ( ArbitraryEff r r
+       , ArbitraryEff '[e1] r
+       , ArbitraryEff '[e2] r
        )
     => (forall a. Sem r a -> IO a)
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropCommutative lower = property @(Gen Property) $ do
-  SomeEff (SomeAction m1) <- oneof $ genSomeEff @r @r
-  SomeEff (SomeAction e1) <- oneof $ genSomeEff @'[e1] @r
-  SomeEff (SomeAction e2) <- oneof $ genSomeEff @'[e2] @r
-  SomeEff (SomeAction m2) <- oneof $ genSomeEff @r @r
+  SomeEff m1 <- arbitraryActionFromRow @r @r
+  SomeEff e1 <- arbitraryActionFromRow @'[e1] @r
+  SomeEff e2 <- arbitraryActionFromRow @'[e2] @r
+  SomeEff m2 <- arbitraryActionFromRow @r @r
   pure $
     counterexample "Effects are not commutative!" $
     counterexample "" $
