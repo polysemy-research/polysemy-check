@@ -35,11 +35,20 @@ deriveGenericK ''Writer
 
 deriving instance Show s => Show (State s (Sem r) a)
 deriving instance Show o => Show (Output o (Sem r) a)
-deriving instance Show i => Show (Input i (Sem r) a)
+deriving instance Show (Input i (Sem r) a)
 deriving instance Show (Fail (Sem r) a)
 deriving instance Show (Trace (Sem r) a)
 
 instance Show e => Show (Error e (Sem r) a) where
   show (Throw e2) = "Throw " <> show e2
-  show (Catch _ _) = "<catch>"
+  show (Catch _ _) = "<Catch>"
+
+instance Show (Reader e (Sem r) a) where
+  show Ask = "Ask"
+  show (Local _ _) = "<Local>"
+
+instance Show e => Show (Writer e (Sem r) a) where
+  show (Tell e) = "Tell " <> show e
+  show (Listen _) = "<Listen>"
+  show (Pass _) = "<Pass>"
 
