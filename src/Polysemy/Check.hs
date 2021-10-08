@@ -24,6 +24,7 @@ module Polysemy.Check
   , TypesOf
 
     -- * Re-exports
+  , send
   , deriveGenericK
   , GenericK
   ) where
