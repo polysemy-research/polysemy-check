@@ -1,19 +1,25 @@
-{-# OPTIONS_GHC -Wredundant-constraints #-}
-
-module Polysemy.Check.AnyEff where
+module Polysemy.Check.Arbitrary.AnyEff where
 
 import Data.Kind (Type, Constraint)
 import GHC.Exts (type (~~))
 import Generics.Kind
 import Polysemy
 import Polysemy.Internal
-import Polysemy.Check.Arbitrary
+import Polysemy.Check.Arbitrary.Generic
 import Test.QuickCheck
 
 
 ------------------------------------------------------------------------------
--- | @'TypesOf' ('RepK' e)@ is a list of every type that can be bound via @e@'s
--- effects.
+-- | Helper function for implementing 'GTypesOf'
+type family GTypesOf (f :: LoT Effect -> Type) :: [Type] where
+  GTypesOf (M1 _1 _2 f) = GTypesOf f
+  GTypesOf (f :+: g) = Append (GTypesOf f) (GTypesOf g)
+  GTypesOf (('Kon (~~) ':@: Var1 ':@: 'Kon a) :=>: f) = '[a]
+  GTypesOf (('Kon ((~~) a) ':@: Var1) :=>: f) = '[a]
+
+
+------------------------------------------------------------------------------
+-- | @'TypesOf' e@ is a list of every type that can be bound via @e@'s actions.
 --
 -- For example, given:
 --
@@ -23,13 +29,7 @@ import Test.QuickCheck
 --   Blah :: Bool -> MyEffect m String
 -- @
 --
--- the result of @'TypesOf' ('RepK' MyEffect)@ is @'[Int, String]@.
-type family GTypesOf (f :: LoT Effect -> Type) :: [Type] where
-  GTypesOf (M1 _1 _2 f) = GTypesOf f
-  GTypesOf (f :+: g) = Append (GTypesOf f) (GTypesOf g)
-  GTypesOf (('Kon (~~) ':@: Var1 ':@: 'Kon a) :=>: f) = '[a]
-  GTypesOf (('Kon ((~~) a) ':@: Var1) :=>: f) = '[a]
-
+-- the result of @'TypesOf' MyEffect@ is @'[Int, String]@.
 type TypesOf (e :: Effect) = GTypesOf (RepK e)
 
 
@@ -44,7 +44,12 @@ type family ArbitraryForAll (as :: [Type]) (m :: Type -> Type) :: Constraint whe
 ------------------------------------------------------------------------------
 -- | @'SomeAction' e r@ is some action for effect @e@ in effect row @r@.
 data SomeAction e (r :: EffectRow) where
-  SomeAction :: (Member e r, Eq a, Show a, Show (e (Sem r) a)) => e (Sem r) a -> SomeAction e r
+  SomeAction
+      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      => e (Sem r) a
+         -- ^
+      -> SomeAction e r
+         -- ^
 
 instance Show (SomeAction e r) where
   show (SomeAction ema) = show ema
@@ -53,47 +58,29 @@ instance Show (SomeEff r) where
   show (SomeEff sse) = show sse
 
 
-arbitraryAction
-    :: forall e r
-     . ArbitraryAction (TypesOf e) e r
-    => Gen (SomeAction e r)
-arbitraryAction = oneof $ genSomeAction @(TypesOf e) @e @r
-
-
-arbitraryActionOfType
-    :: forall e a r
-     . (GenericK (e (Sem r) a), GArbitraryK a (RepK (e (Sem r) a)))
-    => Gen (e (Sem r) a)
-arbitraryActionOfType = genEff @e @a @(Sem r)
-
-
-arbitraryActionFromRow
-    :: forall (effs :: EffectRow) r
-     . ArbitraryEff effs r
-    => Gen (SomeEff r)
-arbitraryActionFromRow = oneof $ genSomeEff @effs @r
-
-
-arbitraryActionFromRowOfType
-    :: forall (effs :: EffectRow) r a
-     . ArbitraryEffOfType a effs r
-    => Gen (SomeEffOfType r a)
-arbitraryActionFromRowOfType = oneof $ genSomeEffOfType @a @effs @r
-
-
 ------------------------------------------------------------------------------
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEff (r :: EffectRow) where
-  SomeEff :: (Member e r, Eq a, Show a, Show (e (Sem r) a)) => e (Sem r) a -> SomeEff r
+  SomeEff
+      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      => e (Sem r) a
+         -- ^
+      -> SomeEff r
+         -- ^
 
 ------------------------------------------------------------------------------
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEffOfType (r :: EffectRow) a where
-  SomeEffOfType :: (Member e r, Eq a, Show a, Show (e (Sem r) a)) => e (Sem r) a -> SomeEffOfType r a
+  SomeEffOfType
+      :: (Member e r, Eq a, Show a, Show (e (Sem r) a))
+      => e (Sem r) a
+         -- ^
+      -> SomeEffOfType r a
+         -- ^
 
 
 ------------------------------------------------------------------------------
--- | @'GenerateSomeEff' es r@ lets you randomly generate an action in any of
+-- | @'ArbitraryEff' es r@ lets you randomly generate an action in any of
 -- the effects @es@.
 class ArbitraryEff (es :: EffectRow) (r :: EffectRow) where
   genSomeEff :: [Gen (SomeEff r)]
@@ -109,8 +96,8 @@ instance
              <> genSomeEff @es @r
 
 ------------------------------------------------------------------------------
--- | @'GenerateSomeEff' es r@ lets you randomly generate an action in any of
--- the effects @es@.
+-- | @'ArbitraryEffOfType' a es r@ lets you randomly generate an action in any of
+-- the effects @es@ that produces type @a@.
 class ArbitraryEffOfType (a :: Type) (es :: EffectRow) (r :: EffectRow) where
   genSomeEffOfType :: [Gen (SomeEffOfType r a)]
 
@@ -129,13 +116,12 @@ instance
     => ArbitraryEffOfType a (e ': es) r
     where
   genSomeEffOfType
-    = fmap SomeEffOfType (arbitraryActionOfType @e @a @r)
+    = fmap SomeEffOfType (genEff @e @a @(Sem r))
     : genSomeEffOfType @a @es @r
 
 
-
 ------------------------------------------------------------------------------
--- | @'GenerateSomeAction' as e r@ lets you randomly generate an action
+-- | @'ArbitraryAction' as e r@ lets you randomly generate an action
 -- producing any type in @as@ from the effect @e@.
 class ArbitraryAction (as :: [Type]) (e :: Effect) (r :: EffectRow) where
   genSomeAction :: [Gen (SomeAction e r)]

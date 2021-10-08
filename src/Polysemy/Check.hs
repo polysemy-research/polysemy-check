@@ -1,5 +1,5 @@
 module Polysemy.Check
-  ( -- * Property Generators
+  ( -- * Effect Properties
     prepropCommutative
   , prepropEquivalent
   , prepropLaw
@@ -10,17 +10,33 @@ module Polysemy.Check
   , arbitraryActionFromRow
   , arbitraryActionFromRowOfType
 
+    -- * Types for Generators for Effects
+  , SomeAction (..)
+  , SomeEff (..)
+  , SomeEffOfType (..)
+
+    -- * Constraints for Generators of Effects
+  , GArbitraryK
+  , ArbitraryAction
+  , ArbitraryEff
+  , ArbitraryEffOfType
+  , TypesOf
+
     -- * Re-exports
   , deriveGenericK
+  , GenericK
   ) where
 
 import Generics.Kind.TH (deriveGenericK)
 import Polysemy
-import Polysemy.Check.AnyEff
+import Polysemy.Check.Arbitrary
+import Polysemy.Check.Arbitrary.AnyEff
 import Polysemy.Check.Orphans ()
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Test.QuickCheck
+import Generics.Kind (GenericK)
+import Polysemy.Check.Arbitrary.Generic (GArbitraryK)
 
 
 ------------------------------------------------------------------------------

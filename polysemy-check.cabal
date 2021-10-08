@@ -26,8 +26,9 @@ source-repository head
 library
   exposed-modules:
       Polysemy.Check
-      Polysemy.Check.AnyEff
       Polysemy.Check.Arbitrary
+      Polysemy.Check.Arbitrary.AnyEff
+      Polysemy.Check.Arbitrary.Generic
       Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
   other-modules:
