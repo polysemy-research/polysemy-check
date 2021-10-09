@@ -29,6 +29,7 @@ module Polysemy.Check
   , GenericK
   ) where
 
+import Control.Monad (void)
 import Data.Proxy
 import Generics.Kind (GenericK)
 import Generics.Kind.TH (deriveGenericK)
@@ -102,18 +103,36 @@ prepropCommutative lower = property @(Gen Property) $ do
 -- For example, any lawful interpretation of @State@ must satisfy the @put s1
 -- >> put s2 = put s2@ law.
 prepropLaw
-    :: (Eq x, Show x)
+    :: forall effs r a f
+     . ( Eq a
+       , Show a
+       , ArbitraryEff effs r
+       , (forall z. Eq z => Eq (f z))
+       , (forall z. Show z => Show (f z))
+       )
     => Gen (Sem r a, Sem r a)
        -- ^ A generator for two equivalent programs.
-    -> (Sem r a -> IO x)
+    -> (forall z. Sem r (a, z) -> IO (f (a, z)))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
-prepropLaw g lower = property $ do
+prepropLaw g lower = property @(Gen Property) $ do
+  SomeEff pre <- arbitraryActionFromRow @effs @r
   (m1, m2) <- g
+  SomeEff post <- arbitraryActionFromRow @effs @r
   pure $ ioProperty $ do
-    a1 <- lower m1
-    a2 <- lower m2
+    a1 <-
+      lower $ do
+        void $ send pre
+        a1 <- m1
+        r <- send post
+        pure (a1, r)
+    a2 <-
+      lower $ do
+        void $ send pre
+        a2 <- m2
+        r <- send post
+        pure (a2, r)
     pure $ a1 === a2
 
 
