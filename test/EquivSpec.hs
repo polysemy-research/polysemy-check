@@ -5,14 +5,14 @@
 
 module EquivSpec where
 
+import Data.IORef (newIORef)
+import Data.Proxy (Proxy)
 import Polysemy
 import Polysemy.Check
-import Test.Hspec
-import Test.QuickCheck
-import Test.Hspec.QuickCheck
 import Polysemy.State
-import Data.IORef (newIORef)
-import Unsafe.Coerce (unsafeCoerce)
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 
 
 spec :: Spec
@@ -23,15 +23,11 @@ spec = do
       prepropEquivalent @'[State Int] @Int
         (runPureState s0)
         (runIOState s0)
-        $ ((do
+        $ \(_ :: Proxy r) -> do
             SomeAction e1 <- arbitraryAction @(State Int) @r
             SomeAction e2 <- arbitraryAction @(State Int) @r
-            SomeAction e3 <- arbitraryAction @(State Int) @r
-            -- TODO(sandy): e3 has an existential type! GHC doesn't care, but
-            -- AFAIK, thereis no syntax to return this type, since it doesn't
-            -- exist when we bind 'a' below.
-            pure $ send e1 >> send e2 >> unsafeCoerce (send e3)
-           ) :: forall r a. Member (State Int) r => Gen (Sem r a))
+            e3 <- arbitraryActionOfType @(State Int) @Int @r
+            pure $ send e1 >> send e2 >> send e3
 
 
 runPureState :: Int -> Sem '[State Int] a -> IO a
