@@ -36,17 +36,25 @@ spec = do
       pure $ putGetLaw $ runIOState s
 
 
-putPutLaw
-    :: forall s r
-     . ( Arbitrary s
-       , Member (State s) r
+type LawConstraints f effs s r =
+       ( Arbitrary s
+       , Members effs r
        , Eq s
        , Show s
-       , ArbitraryEff '[State s] r
+       , ArbitraryEff effs r
+       , f ~ (,) s
+       , effs ~ '[State s]
        )
-    => (forall a. Sem r ((), a) -> IO (s, ((), a)))
+
+
+putPutLaw
+    :: forall s r res effs f
+     . ( res ~ ()
+       , LawConstraints f effs s r
+       )
+    => (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
-putPutLaw = prepropLaw @'[State s] $ do
+putPutLaw = prepropLaw @effs $ do
   s1 <- arbitrary
   s2 <- arbitrary
   pure
@@ -59,16 +67,13 @@ putPutLaw = prepropLaw @'[State s] $ do
 
 
 getPutLaw
-    :: forall s r
-     . ( Arbitrary s
-       , Member (State s) r
-       , Eq s
-       , Show s
-       , ArbitraryEff '[State s] r
+    :: forall s r res effs f
+     . ( res ~ ()
+       , LawConstraints f effs s r
        )
-    => (forall a. Sem r ((), a) -> IO (s, ((), a)))
+    => (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
-getPutLaw = prepropLaw @'[State s] $ do
+getPutLaw = prepropLaw @effs $ do
   pure
     ( get >>= put
     , pure ()
@@ -76,16 +81,13 @@ getPutLaw = prepropLaw @'[State s] $ do
 
 
 putGetLaw
-    :: forall s r
-     . ( Arbitrary s
-       , Member (State s) r
-       , Eq s
-       , Show s
-       , ArbitraryEff '[State s] r
+    :: forall s r res effs f
+     . ( res ~ s
+       , LawConstraints f effs s r
        )
-    => (forall a. Sem r (s, a) -> IO (s, (s, a)))
+    => (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
-putGetLaw = prepropLaw @'[State s] $ do
+putGetLaw = prepropLaw @effs $ do
   s <- arbitrary
   pure
     ( do
