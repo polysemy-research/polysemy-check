@@ -104,11 +104,12 @@ prepropCommutative lower = property @(Gen Property) $ do
 -- >> put s2 = put s2@ law.
 prepropLaw
     :: forall effs r a f
-     . ( Eq a
+     . ( (forall z. Eq z => Eq (f z))
+       , (forall z. Show z => Show (f z))
+       )
+    => ( Eq a
        , Show a
        , ArbitraryEff effs r
-       , (forall z. Eq z => Eq (f z))
-       , (forall z. Show z => Show (f z))
        )
     => Gen (Sem r a, Sem r a)
        -- ^ A generator for two equivalent programs.
@@ -141,12 +142,15 @@ prepropLaw g lower = property @(Gen Property) $ do
 -- property ensures that the two interpreters give the same result for every
 -- arbitrary program.
 prepropEquivalent
-    :: forall effs x r1 r2
-     . (Eq x, Show x, Inject effs r1, Inject effs r2, Members effs effs)
-    => (forall a. Sem r1 a -> IO a)
+    :: forall effs x r1 r2 f
+     . ( forall a. Show a => Show (f a)
+       , forall a. Eq a => Eq (f a)
+       )
+    => (Eq x, Show x, Inject effs r1, Inject effs r2, Members effs effs)
+    => (forall a. Sem r1 a -> IO (f a))
        -- ^ The first interpreter for the effect stack.Pure effect stacks can
        -- be lifted into 'IO' via 'pure' after the final 'run'.
-    -> (forall a. Sem r2 a -> IO a)
+    -> (forall a. Sem r2 a -> IO (f a))
        -- ^ The second interpreter to prove equivalence for.
     -> (forall r. Proxy r -> Members effs r => Gen (Sem r x))
        -- ^ A generator producing arbitrary programs in @r@. The property will

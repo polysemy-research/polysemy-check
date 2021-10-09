@@ -5,7 +5,7 @@
 
 module EquivSpec where
 
-import Data.IORef (newIORef)
+import Data.IORef (newIORef, readIORef)
 import Data.Proxy (Proxy)
 import Polysemy
 import Polysemy.Check
@@ -30,12 +30,14 @@ spec = do
             pure $ send e1 >> send e2 >> send e3
 
 
-runPureState :: Int -> Sem '[State Int] a -> IO a
-runPureState s = pure . run . evalState s
+runPureState :: Int -> Sem '[State Int] a -> IO (Int, a)
+runPureState s = pure . run . runState s
 
 
-runIOState :: Int -> Sem '[State Int, Embed IO] a -> IO (a)
+runIOState :: Int -> Sem '[State Int, Embed IO] a -> IO (Int, a)
 runIOState s sem = do
   ref <- newIORef s
-  runM . runStateIORef ref $ sem
+  a <- runM . runStateIORef ref $ sem
+  r <- readIORef ref
+  pure (r, a)
 
