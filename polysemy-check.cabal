@@ -61,7 +61,7 @@ library
       QuickCheck
     , base >=4.7 && <5
     , containers
-    , kind-generics
+    , kind-generics <=0.4.1.0
     , kind-generics-th
     , polysemy
   default-language: Haskell2010
@@ -103,7 +103,7 @@ test-suite test
     , base >=4.7 && <5
     , containers
     , hspec
-    , kind-generics
+    , kind-generics <=0.4.1.0
     , kind-generics-th
     , polysemy
     , polysemy-check

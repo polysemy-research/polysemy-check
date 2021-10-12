@@ -42,7 +42,7 @@ dependencies:
 - polysemy
 - containers
 - QuickCheck
-- kind-generics
+- kind-generics <= 0.4.1.0
 - kind-generics-th
 
 library:
