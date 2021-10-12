@@ -23,7 +23,7 @@ data family ExistentialFor (e :: Effect)
 
 
 ------------------------------------------------------------------------------
--- | Given @'GArbitraryK' a ('RepK' e) r a@, this typeclass computes
+-- | Given @'GArbitraryK' e ('RepK' e) r a@, this typeclass computes
 -- generators for every well-typed constructor of @e (Sem r) a@. It is capable
 -- of building generators for GADTs.
 class GArbitraryK (e :: Effect) (f :: LoT Effect -> Type) (r :: EffectRow) (a :: Type)  where
