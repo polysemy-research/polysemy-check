@@ -39,9 +39,10 @@ type TypesOf (e :: Effect) = GTypesOf (RepK e)
 ------------------------------------------------------------------------------
 -- | A type family that expands to a 'GArbitraryK' constaint for every type in
 -- the first list.
-type family ArbitraryForAll (as :: [Type]) (m :: Type -> Type) :: Constraint where
-  ArbitraryForAll '[] f = ()
-  ArbitraryForAll (a ': as) f = (Eq a, Show a, GArbitraryK a (RepK (f a)), ArbitraryForAll as f)
+type family ArbitraryForAll (e :: Effect) (as :: [Type]) (r :: EffectRow) :: Constraint where
+  ArbitraryForAll e '[] f = ()
+  ArbitraryForAll e (a ': as) r =
+    (Eq a, Show a, GArbitraryK e (RepK e) r a, ArbitraryForAll e as r)
 
 
 ------------------------------------------------------------------------------
@@ -112,15 +113,15 @@ instance
     , Show a
     , Show (e (Sem r) a)
     , ArbitraryEffOfType a es r
-    , GenericK (e (Sem r) a)
-    , GArbitraryK a (RepK (e (Sem r) a))
+    , GenericK e
+    , GArbitraryK e (RepK e) r a
     , CoArbitrary a
     , Member e r
     )
     => ArbitraryEffOfType a (e ': es) r
     where
   genSomeEffOfType
-    = fmap SomeEffOfType (genEff @e @a @(Sem r))
+    = fmap SomeEffOfType (genEff @e @r @a)
     : genSomeEffOfType @a @es @r
 
 
@@ -139,11 +140,11 @@ instance
     , Show a
     , Member e r
     , Show (e (Sem r) a)
-    , GenericK (e (Sem r) a)
+    , GenericK e
     , CoArbitrary a
-    , GArbitraryK a (RepK (e (Sem r) a))
+    , GArbitraryK e (RepK e) r a
     )
     => ArbitraryAction (a : as) e r
     where
-  genSomeAction = (fmap SomeAction $ genEff @e @a @(Sem r)) : genSomeAction @as @e @r
+  genSomeAction = (fmap SomeAction $ genEff @e @r @a) : genSomeAction @as @e @r
 

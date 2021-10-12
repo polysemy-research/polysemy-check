@@ -3,75 +3,85 @@ module Polysemy.Check.Arbitrary.Generic where
 import Control.Applicative (liftA2)
 import Data.Kind (Type)
 import GHC.Exts (type (~~))
-import Generics.Kind
-import Test.QuickCheck
+import Generics.Kind hiding (SubstRep)
+import Generics.Kind.Unexported
 import Polysemy
 import Polysemy.Check.Arbitrary.AnyEff
 import Polysemy.Internal (send)
+import Test.QuickCheck
 
 
 ------------------------------------------------------------------------------
-
-type a :~~~: b = 'Kon (~~) ':@: a ':@: b
+-- | Data family for the instantiation of existential variables. If you want to
+-- check properties for an effect @e@ that contains an existential type, the
+-- synthesized 'Arbitrary' instance will instantiate all of @e@'s existential
+-- types at @'ExistentialFor' e@.
+--
+-- @'ExistentialFor' e@ must have instances for every dictionary required by
+-- @e@, and will likely require an 'Arbitrary' instance.
+data family ExistentialFor (e :: Effect)
 
 
 ------------------------------------------------------------------------------
--- | Given @'GArbitraryK' a ('RepK' (e m a))@, this typeclass computes
--- generators for every well-typed constructor of @e m a@. It is capable of
--- building generators for GADTs.
-class GArbitraryK (a :: Type) (f :: LoT Type -> Type) where
-  garbitraryk :: [Gen (f x)]
+-- | Given @'GArbitraryK' a ('RepK' e) r a@, this typeclass computes
+-- generators for every well-typed constructor of @e (Sem r) a@. It is capable
+-- of building generators for GADTs.
+class GArbitraryK (e :: Effect) (f :: LoT Effect -> Type) (r :: EffectRow) (a :: Type)  where
+  garbitraryk :: [Gen (f (LoT2 (Sem r) a))]
 
-instance GArbitraryK a U1 where
+instance GArbitraryK e U1 r a where
   garbitraryk = pure $ pure U1
 
-instance (GArbitraryK1 (f :*: g)) => GArbitraryK a (f :*: g) where
-  garbitraryk = garbitraryk1
+instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :*: g) r a where
+  garbitraryk = liftA2 (liftA2 (:*:)) (garbitraryk @e) (garbitraryk @e)
 
-instance (GArbitraryK1 (Field b)) => GArbitraryK a (Field b) where
-  garbitraryk = garbitraryk1
+instance GArbitraryKTerm (Interpret f (LoT2 (Sem r) a)) => GArbitraryK e (Field f) r a where
+  garbitraryk = pure $ fmap Field $ garbitrarykterm @(Interpret f (LoT2 (Sem r) a))
 
-instance (GArbitraryK a f, GArbitraryK a g) => GArbitraryK a (f :+: g) where
-  garbitraryk = fmap (fmap L1) (garbitraryk @a @f)
-             <> fmap (fmap R1) (garbitraryk @a @g)
+instance
+    ( GArbitraryK e (SubstRep f (ExistentialFor e)) r a
+    , SubstRep' f (ExistentialFor e) (LoT2 (Sem r) a)
+    ) => GArbitraryK e (Exists Type f) r a where
+  garbitraryk = fmap (Exists . unsubstRep @_ @_ @_ @(ExistentialFor e)) <$>
+    garbitraryk @e @(SubstRep f (ExistentialFor e)) @r @a
 
-instance GArbitraryK1 f => GArbitraryK a ('Kon (a ~~ a) :=>: f) where
-  garbitraryk = fmap SuchThat <$> garbitraryk1
+instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :+: g) r a where
+  garbitraryk = fmap (fmap L1) (garbitraryk @e @f)
+             <> fmap (fmap R1) (garbitraryk @e @g)
 
-instance {-# INCOHERENT #-} GArbitraryK a ('Kon (a ~~ b) :=>: f) where
+instance (Interpret c (LoT2 (Sem r) a), GArbitraryK e f r a) => GArbitraryK e (c :=>: f) r a where
+  garbitraryk = fmap (fmap SuchThat) (garbitraryk @e @f)
+
+instance {-# OVERLAPPING #-} GArbitraryK e (c1 :=>: (c2 :=>: f)) r a
+    => GArbitraryK e ((c1 ':&: c2) :=>: f) r a where
+  garbitraryk =
+    fmap
+      ((\(SuchThat (SuchThat x)) -> SuchThat x)
+            :: (c1 :=>: (c2 :=>: f)) x -> ((c1 ':&: c2) :=>: f) x)
+        <$> garbitraryk @e
+
+instance {-# OVERLAPPING #-} GArbitraryK e f r a => GArbitraryK e ('Kon ((~~) a) ':@: Var1 :=>: f) r a where
+  garbitraryk = fmap SuchThat <$> garbitraryk @e @f
+
+instance {-# OVERLAPPING #-} GArbitraryK e f r a => GArbitraryK e ('Kon (~~) ':@: Var1 ':@: 'Kon a :=>: f) r a where
+  garbitraryk = fmap SuchThat <$> garbitraryk @e @f
+
+instance {-# INCOHERENT #-} GArbitraryK e ('Kon ((~~) b) ':@: Var1 :=>: f) r a where
   garbitraryk = []
 
-instance {-# INCOHERENT #-} GArbitraryK a ('Kon (b ~~ c) :=>: f) where
+instance {-# INCOHERENT #-} GArbitraryK e ('Kon (~~) ':@: Var1 ':@: 'Kon b :=>: f) r a where
   garbitraryk = []
 
-instance (GArbitraryK a f) => GArbitraryK a (M1 _1 _2 f) where
-  garbitraryk = fmap M1 <$> garbitraryk @a
+instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
+  garbitraryk = fmap M1 <$> garbitraryk @e
 
 
 ------------------------------------------------------------------------------
--- | @genEff \@e \@a \@m@ gets a generator capable of producing every
--- well-typed GADT constructor of @e m a@.
-genEff :: forall e a m. (GArbitraryK a (RepK (e m a)), GenericK (e m a)) => Gen (e m a)
-genEff = fmap toK $ oneof $ garbitraryk @a @(RepK (e m a))
+-- | @genEff \@e \@r \@a@ gets a generator capable of producing every
+-- well-typed GADT constructor of @e (Sem r) a@.
+genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Sem r) a)
+genEff = fmap toK $ oneof $ garbitraryk @e @(RepK e) @r
 
-
-------------------------------------------------------------------------------
--- | Like @GArbitraryK@, but gets run after we've already discharged the @a
--- ~ T@ GADT constraint.
-class GArbitraryK1 (f :: LoT Type -> Type) where
-  garbitraryk1 :: [Gen (f x)]
-
-instance (GArbitraryK1 f, GArbitraryK1 g) => GArbitraryK1 (f :*: g) where
-  garbitraryk1 = liftA2 (liftA2 (:*:)) garbitraryk1 garbitraryk1
-
-instance GArbitraryKTerm t => GArbitraryK1 (Field ('Kon t)) where
-  garbitraryk1 = pure $ fmap Field garbitrarykterm
-
-instance (GArbitraryK1 f) => GArbitraryK1 (M1 _1 _2 f) where
-  garbitraryk1 = fmap M1 <$> garbitraryk1
-
-instance GArbitraryK1 U1 where
-  garbitraryk1 = pure $ pure U1
 
 
 class GArbitraryKTerm (t :: Type) where
@@ -87,5 +97,4 @@ instance {-# OVERLAPPING #-} (CoArbitrary a, GArbitraryKTerm b) => GArbitraryKTe
 
 instance Arbitrary a => GArbitraryKTerm a where
   garbitrarykterm = arbitrary
-
 
