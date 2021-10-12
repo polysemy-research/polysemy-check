@@ -41,7 +41,7 @@ type TypesOf (e :: Effect) = GTypesOf (RepK e)
 -- the first list.
 type family ArbitraryForAll (as :: [Type]) (m :: Type -> Type) :: Constraint where
   ArbitraryForAll '[] f = ()
-  ArbitraryForAll (a ': as) f = (Eq a, Show a, GArbitraryK a (RepK (f a)), ArbitraryForAll as f)
+  ArbitraryForAll (a ': as) f = (Eq a, Show a, GArbitraryK Type a (RepK (f a)), ArbitraryForAll as f)
 
 
 ------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ instance
     , Show (e (Sem r) a)
     , ArbitraryEffOfType a es r
     , GenericK (e (Sem r) a)
-    , GArbitraryK a (RepK (e (Sem r) a))
+    , GArbitraryK Type a (RepK (e (Sem r) a))
     , CoArbitrary a
     , Member e r
     )
@@ -141,7 +141,7 @@ instance
     , Show (e (Sem r) a)
     , GenericK (e (Sem r) a)
     , CoArbitrary a
-    , GArbitraryK a (RepK (e (Sem r) a))
+    , GArbitraryK Type a (RepK (e (Sem r) a))
     )
     => ArbitraryAction (a : as) e r
     where

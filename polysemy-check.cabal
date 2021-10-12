@@ -33,6 +33,7 @@ library
       Polysemy.Check.Arbitrary.Generic
       Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
+      Test
   other-modules:
       Paths_polysemy_check
   hs-source-dirs:
