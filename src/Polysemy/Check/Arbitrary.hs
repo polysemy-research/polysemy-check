@@ -5,7 +5,6 @@ import Polysemy
 import Polysemy.Check.Arbitrary.AnyEff
 import Polysemy.Check.Arbitrary.Generic
 import Test.QuickCheck
-import Data.Kind (Type)
 
 
 ------------------------------------------------------------------------------
@@ -22,10 +21,10 @@ arbitraryAction = oneof $ genSomeAction @(TypesOf e) @e @r
 -- | Generate any action for effect @e@ that produces type @a@.
 arbitraryActionOfType
     :: forall e a r
-     . (GenericK (e (Sem r) a), GArbitraryK Type a (RepK (e (Sem r) a)))
+     . (GenericK e, GArbitraryK e (RepK e) r a)
     => Gen (e (Sem r) a)
        -- ^
-arbitraryActionOfType = genEff @e @a @(Sem r)
+arbitraryActionOfType = genEff @e @r @a
 
 
 ------------------------------------------------------------------------------

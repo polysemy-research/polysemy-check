@@ -27,13 +27,13 @@ source-repository head
 
 library
   exposed-modules:
+      Generics.Kind.Unexported
       Polysemy.Check
       Polysemy.Check.Arbitrary
       Polysemy.Check.Arbitrary.AnyEff
       Polysemy.Check.Arbitrary.Generic
       Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
-      Test
   other-modules:
       Paths_polysemy_check
   hs-source-dirs:
@@ -73,6 +73,7 @@ test-suite test
       CommutativeSpec
       EquivSpec
       LawSpec
+      WeirdEffectsSpec
       Paths_polysemy_check
   hs-source-dirs:
       test
