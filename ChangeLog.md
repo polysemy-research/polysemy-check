@@ -1,5 +1,11 @@
 # Changelog for polysemy-check
 
+## v0.4.0.0 (2021-10-12)
+
+- `GArbitraryK` now supports actions that contain existential types.
+- (Internal) Aggressively rewrote the `GArbitraryK` typeclass to make better use
+    of `kind-generics`.
+
 ## v0.3.0.0 (2021-10-09)
 
 - `prepropLaw` now synthesizes a monadic prelude and postlude to your laws, to
