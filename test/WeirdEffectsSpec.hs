@@ -3,7 +3,6 @@ module WeirdEffectsSpec where
 import Data.Typeable
 import Polysemy
 import Polysemy.Check
-import Polysemy.Check.Arbitrary.Generic
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck

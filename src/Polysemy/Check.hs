@@ -16,6 +16,9 @@ module Polysemy.Check
   , SomeEff (..)
   , SomeEffOfType (..)
 
+    -- * Support for Existential Types
+  , ExistentialFor
+
     -- * Constraints for Generators of Effects
   , GArbitraryK
   , ArbitraryAction
@@ -36,7 +39,7 @@ import Generics.Kind.TH (deriveGenericK)
 import Polysemy
 import Polysemy.Check.Arbitrary
 import Polysemy.Check.Arbitrary.AnyEff
-import Polysemy.Check.Arbitrary.Generic (GArbitraryK)
+import Polysemy.Check.Arbitrary.Generic (GArbitraryK, ExistentialFor)
 import Polysemy.Check.Orphans ()
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)

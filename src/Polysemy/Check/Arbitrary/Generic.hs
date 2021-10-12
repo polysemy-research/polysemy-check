@@ -11,6 +11,14 @@ import Polysemy.Internal (send)
 import Test.QuickCheck
 
 
+------------------------------------------------------------------------------
+-- | Data family for the instantiation of existential variables. If you want to
+-- check properties for an effect @e@ that contains an existential type, the
+-- synthesized 'Arbitrary' instance will instantiate all of @e@'s existential
+-- types at @'ExistentialFor' e@.
+--
+-- @'ExistentialFor' e@ must have instances for every dictionary required by
+-- @e@, and will likely require an 'Arbitrary' instance.
 data family ExistentialFor (e :: Effect)
 
 
@@ -29,7 +37,6 @@ instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :*: g) r
 
 instance GArbitraryKTerm (Interpret f (LoT2 (Sem r) a)) => GArbitraryK e (Field f) r a where
   garbitraryk = pure $ fmap Field $ garbitrarykterm @(Interpret f (LoT2 (Sem r) a))
-
 
 instance
     ( GArbitraryK e (SubstRep f (ExistentialFor e)) r a
@@ -70,8 +77,8 @@ instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
 
 
 ------------------------------------------------------------------------------
--- | @genEff \@e \@a \@m@ gets a generator capable of producing every
--- well-typed GADT constructor of @e m a@.
+-- | @genEff \@e \@r \@a@ gets a generator capable of producing every
+-- well-typed GADT constructor of @e (Sem r) a@.
 genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Sem r) a)
 genEff = fmap toK $ oneof $ garbitraryk @e @(RepK e) @r
 
