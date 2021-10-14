@@ -30,8 +30,6 @@ library
       Generics.Kind.Unexported
       Polysemy.Check
       Polysemy.Check.Arbitrary
-      Polysemy.Check.Arbitrary.AnyEff
-      Polysemy.Check.Arbitrary.Generic
       Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
   other-modules:
