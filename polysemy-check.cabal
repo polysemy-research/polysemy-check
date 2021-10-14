@@ -71,6 +71,7 @@ test-suite test
   main-is: Main.hs
   other-modules:
       CommutativeSpec
+      CoverageSpec
       EquivSpec
       LawSpec
       WeirdEffectsSpec
