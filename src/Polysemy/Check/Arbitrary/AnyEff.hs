@@ -61,6 +61,9 @@ instance Show (SomeAction e r) where
 instance Show (SomeEff r) where
   show (SomeEff sse) = show sse
 
+instance Show (SomeEffOfType r a) where
+  show (SomeEffOfType sse) = show sse
+
 
 ------------------------------------------------------------------------------
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
@@ -121,8 +124,8 @@ instance
     => ArbitraryEffOfType a (e ': es) r
     where
   genSomeEffOfType
-    = fmap SomeEffOfType (genEff @e @r @a)
-    : genSomeEffOfType @a @es @r
+    = (fmap (SomeEffOfType @e @r . toK) <$> garbitraryk @e @(RepK e) @r)
+    <> genSomeEffOfType @a @es @r
 
 
 ------------------------------------------------------------------------------
