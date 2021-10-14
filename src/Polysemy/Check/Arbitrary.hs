@@ -36,8 +36,8 @@ instance GArbitraryK e U1 r a where
 instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :*: g) r a where
   garbitraryk = liftA2 (liftA2 (:*:)) (garbitraryk @e) (garbitraryk @e)
 
-instance GArbitraryKTerm (Interpret f (LoT2 (Sem r) a)) => GArbitraryK e (Field f) r a where
-  garbitraryk = pure $ fmap Field $ garbitrarykterm @(Interpret f (LoT2 (Sem r) a))
+instance Arbitrary (Interpret f (LoT2 (Sem r) a)) => GArbitraryK e (Field f) r a where
+  garbitraryk = pure $ fmap Field arbitrary
 
 instance
     ( GArbitraryK e (SubstRep f (ExistentialFor e)) r a
@@ -75,22 +75,6 @@ instance {-# INCOHERENT #-} GArbitraryK e ('Kon (~~) ':@: Var1 ':@: 'Kon b :=>: 
 
 instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
   garbitraryk = fmap M1 <$> garbitraryk @e
-
-------------------------------------------------------------------------------
-
-class GArbitraryKTerm (t :: Type) where
-  garbitrarykterm :: Gen t
-
--- instance {-# OVERLAPPING #-} ArbitraryEffOfType a r r => GArbitraryKTerm (Sem r a) where
---   garbitrarykterm = do
---     SomeEffOfType act <- oneof $ genSomeEffOfType @a @r @r
---     pure $ send act
-
-instance {-# OVERLAPPING #-} (CoArbitrary a, GArbitraryKTerm b) => GArbitraryKTerm (a -> b) where
-  garbitrarykterm = liftArbitrary garbitrarykterm
-
-instance Arbitrary a => GArbitraryKTerm a where
-  garbitrarykterm = arbitrary
 
 ------------------------------------------------------------------------------
 
