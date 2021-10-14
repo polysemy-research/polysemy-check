@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Polysemy.Check.Arbitrary where
 
 import Generics.Kind
@@ -5,6 +6,25 @@ import Polysemy
 import Polysemy.Check.Arbitrary.AnyEff
 import Polysemy.Check.Arbitrary.Generic
 import Test.QuickCheck
+import Polysemy.Internal (send)
+
+
+instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
+      => Arbitrary (Sem r a) where
+  arbitrary =
+    let terminal = [pure <$> arbitrary]
+     in sized $ \n ->
+          case n <= 1 of
+            True -> oneof terminal
+            False -> oneof $
+              [ do
+                  SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
+                  pure $ send e
+              , do
+                  SomeEff e <- arbitraryActionFromRow @r @r
+                  k <- liftArbitrary $ scale (`div` 2) arbitrary
+                  pure $ send e >>= k
+              ] <> terminal
 
 
 ------------------------------------------------------------------------------
