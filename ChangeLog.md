@@ -1,5 +1,17 @@
 # Changelog for polysemy-check
 
+## v0.5.0.0 (2021-10-14)
+
+- Flattened the module structure of `Polysemy.Check.Arbitrary`.
+- Fixed a bug where `arbitraryActionFromRowOfType` would return bottom.
+- Added an `Arbitrary` instance for `Sem r a`.
+- Added tests to prove all generators have a uniform distribution for actions.
+- `prepropLaw` now prints the actions it ran before and after your test.
+- Changed the orphan `Show` instances for standard Polysemy effects to more
+    easily be used for testing coverage.
+- Added a `Show` instance for `SomeEffOfType`.
+- (Internal) Removed the `GArbitraryKTerm` class
+
 ## v0.4.0.0 (2021-10-12)
 
 - `GArbitraryK` now supports actions that contain existential types.
