@@ -122,20 +122,23 @@ prepropLaw g lower = property @(Gen Property) $ do
   SomeEff pre <- arbitraryActionFromRow @effs @r
   (m1, m2) <- g
   SomeEff post <- arbitraryActionFromRow @effs @r
-  pure $ ioProperty $ do
-    a1 <-
-      lower $ do
-        void $ send pre
-        a1 <- m1
-        r <- send post
-        pure (a1, r)
-    a2 <-
-      lower $ do
-        void $ send pre
-        a2 <- m2
-        r <- send post
-        pure (a2, r)
-    pure $ a1 === a2
+  pure $
+    counterexample ("before = " <> show pre) $
+    counterexample ("after  = " <> show post) $
+      ioProperty $ do
+        a1 <-
+          lower $ do
+            void $ send pre
+            a1 <- m1
+            r <- send post
+            pure (a1, r)
+        a2 <-
+          lower $ do
+            void $ send pre
+            a2 <- m2
+            r <- send post
+            pure (a2, r)
+        pure $ a1 === a2
 
 
 ------------------------------------------------------------------------------
