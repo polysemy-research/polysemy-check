@@ -41,14 +41,14 @@ deriving instance Show (Trace (Sem r) a)
 
 instance Show e => Show (Error e (Sem r) a) where
   show (Throw e2) = "Throw " <> show e2
-  show (Catch _ _) = "<Catch>"
+  show (Catch _ _) = "Catch <m> <k>"
 
 instance Show (Reader e (Sem r) a) where
   show Ask = "Ask"
-  show (Local _ _) = "<Local>"
+  show (Local _ _) = "Local <f> <m>"
 
 instance Show e => Show (Writer e (Sem r) a) where
   show (Tell e) = "Tell " <> show e
-  show (Listen _) = "<Listen>"
-  show (Pass _) = "<Pass>"
+  show (Listen _) = "Listen <m>"
+  show (Pass _) = "Pass <m>"
 
