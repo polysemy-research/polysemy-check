@@ -71,7 +71,7 @@ spec = do
 
   describe "Equivalence" $ do
     let equiv b1 b2 =
-          prepropEquivalent @'[Stack Int] @Int
+          prepropEquivalent @'[Stack Int]
             (pure . run . runStack b1)
             (pure . run . runStack b2)
 

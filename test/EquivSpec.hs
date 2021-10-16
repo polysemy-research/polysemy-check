@@ -19,7 +19,7 @@ spec = do
   prop "Pure state is equivalent to IO state" $ do
     s0 <- arbitrary
     pure $
-      prepropEquivalent @'[State Int] @Int
+      prepropEquivalent @'[State Int]
         (runPureState s0)
         (runIOState s0)
 

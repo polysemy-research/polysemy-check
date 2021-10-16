@@ -144,15 +144,13 @@ prepropLaw g lower = property @(Gen Property) $ do
 -- | Prove that two interpreters are equivalent. This property ensures that the
 -- two interpreters give the same result for every arbitrary program.
 prepropEquivalent
-    :: forall effs x r1 r2 f
+    :: forall effs r1 r2 f
      . ( forall a. Show a => Show (f a)
        , forall a. Eq a => Eq (f a)
        )
-    => ( Eq x
-       , Show x
-       , Inject effs r1
+    => ( Inject effs r1
        , Inject effs r2
-       , Arbitrary (Sem effs x)
+       , Arbitrary (Sem effs Int)
        )
     => (forall a. Sem r1 a -> IO (f a))
        -- ^ The first interpreter for the effect stack.Pure effect stacks can
@@ -161,7 +159,7 @@ prepropEquivalent
        -- ^ The second interpreter to prove equivalence for.
     -> Property
 prepropEquivalent int1 int2 = property $ do
-  SomeSem sem <- liftGen @effs @x
+  SomeSem sem <- liftGen @effs @Int
   pure $ ioProperty $ do
     a1 <- int1 sem
     a2 <- int2 sem
