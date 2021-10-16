@@ -71,6 +71,7 @@ test-suite test
       CommutativeSpec
       CoverageSpec
       EquivSpec
+      ExampleSpec
       LawSpec
       WeirdEffectsSpec
       Paths_polysemy_check
