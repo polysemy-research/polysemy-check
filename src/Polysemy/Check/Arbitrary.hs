@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Polysemy.Check.Arbitrary where
@@ -85,15 +87,15 @@ instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
      in sized $ \n ->
           case n <= 1 of
             True -> oneof terminal
-            False -> oneof $
-              [ do
+            False -> frequency $
+              [ (2,) $ do
                   SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
                   pure $ send e
-              , do
+              , (8,) $ do
                   SomeEff e <- arbitraryActionFromRow @r @r
                   k <- liftArbitrary $ scale (`div` 2) arbitrary
                   pure $ send e >>= k
-              ] <> terminal
+              ] <> fmap (1,) terminal
 
 ------------------------------------------------------------------------------
 -- | @genEff \@e \@r \@a@ gets a generator capable of producing every
