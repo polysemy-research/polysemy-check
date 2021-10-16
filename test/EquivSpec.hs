@@ -6,7 +6,6 @@
 module EquivSpec where
 
 import Data.IORef (newIORef, readIORef)
-import Data.Proxy (Proxy)
 import Polysemy
 import Polysemy.Check
 import Polysemy.State
@@ -23,11 +22,6 @@ spec = do
       prepropEquivalent @'[State Int] @Int
         (runPureState s0)
         (runIOState s0)
-        $ \(_ :: Proxy r) -> do
-            SomeAction e1 <- arbitraryAction @(State Int) @r
-            SomeAction e2 <- arbitraryAction @(State Int) @r
-            e3 <- arbitraryActionOfType @(State Int) @Int @r
-            pure $ send e1 >> send e2 >> send e3
 
 
 runPureState :: Int -> Sem '[State Int] a -> IO (Int, a)
