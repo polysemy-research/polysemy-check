@@ -1,5 +1,10 @@
 # Changelog for polysemy-check
 
+## v0.7.0.0 (2021-10-16)
+
+- Removed the `x` type variable from `prepropEquivalent`, since it is safe to
+    instantiate arbitrarily, and leads to aggressive type errors if forgotten.
+
 ## v0.6.0.0 (2021-10-16)
 
 - Changed the frequencies of `Sem`'s `Arbitrary` instance, to create more
