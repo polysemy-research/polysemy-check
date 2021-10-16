@@ -4,16 +4,15 @@
 
 module ExampleSpec where
 
-import Polysemy
-import Polysemy.Check
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Polysemy.State
 import Control.Monad
 import Data.Maybe (listToMaybe)
-import Test.QuickCheck (expectFailure, arbitrary, elements)
 import GHC.Generics (Generic)
-import Test.QuickCheck.Arbitrary (Arbitrary)
+import Polysemy
+import Polysemy.Check
+import Polysemy.State
+import Test.Hspec
+import Test.Hspec.QuickCheck
+import Test.QuickCheck
 
 
 data Stack s m a where
