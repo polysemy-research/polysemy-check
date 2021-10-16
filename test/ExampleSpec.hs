@@ -6,7 +6,6 @@ module ExampleSpec where
 
 import Control.Monad
 import Data.Maybe (listToMaybe)
-import GHC.Generics (Generic)
 import Polysemy
 import Polysemy.Check
 import Polysemy.State
@@ -93,10 +92,10 @@ spec = do
 data Bug
   = PushTwice
   | DontRemove
-  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
+  deriving stock (Eq, Ord, Show, Enum, Bounded)
 
 instance Arbitrary Bug where
-  arbitrary = elements [PushTwice, DontRemove]
+  arbitrary = elements [minBound..maxBound]
 
 
 hasBug :: [Bug] -> Bug -> Bool
