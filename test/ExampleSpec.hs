@@ -25,30 +25,70 @@ data Stack s m a where
 deriving instance Show s => Show (Stack s m a)
 deriveGenericK ''Stack
 
+makeSem ''Stack
+
 
 spec :: Spec
 spec = do
-  prop "An interpreter is equivalent to itself" $ do
-    bugs <- arbitrary
-    pure $
-      prepropEquivalent @'[Stack Int] @Int
-        (pure . run . runStack bugs)
-        (pure . run . runStack bugs)
-  prop "DontRemove bug interpreter isn't equivalent to the correct version" $
-    expectFailure $
-      prepropEquivalent @'[Stack Int] @Int
-        (pure . run . runStack [DontRemove])
-        (pure . run . runStack [])
-  prop "PushTwice bug interpreter isn't equivalent to the correct version" $
-    expectFailure $
-      prepropEquivalent @'[Stack Int] @Int
-        (pure . run . runStack [PushTwice])
-        (pure . run . runStack [])
-  prop "The buggy interpreters are not equivalent to one another" $
-    expectFailure $
-      prepropEquivalent @'[Stack Int] @Int
-        (pure . run . runStack [PushTwice])
-        (pure . run . runStack [DontRemove])
+  describe "Laws" $ do
+    let law x = prepropLaw @'[Stack Int] x $ pure . run . runStack []
+
+    prop "push >> pop is pure" $ do
+      law $ do
+        s <- arbitrary
+        pure
+          ( push s >> pop
+          , pure $ Just s
+          )
+
+    prop "pop >> push is id" $ do
+      law $
+        pure
+          ( pop >>= maybe (pure ()) push
+          , pure ()
+          )
+
+    prop "removeAll sets size to 0" $ do
+      law $
+        pure
+          ( removeAll >> size
+          , removeAll >> pure 0
+          )
+
+    prop "push increases size by 1" $ do
+      law $ do
+        s <- arbitrary
+        pure
+          ( push s >> size
+          , fmap (+1) size <* push s
+          )
+
+    prop "pop decreases size by 1" $ do
+      law $ do
+        pure
+          ( pop >> size
+          , fmap (max 0 . subtract 1) size <* pop
+          )
+
+
+  describe "Equivalence" $ do
+    let equiv b1 b2 =
+          prepropEquivalent @'[Stack Int] @Int
+            (pure . run . runStack b1)
+            (pure . run . runStack b2)
+
+    prop "All interpreters are equivalent to itself" $ do
+      bugs <- arbitrary
+      pure $ equiv bugs bugs
+
+    prop "DontRemove bug interpreter isn't equivalent to the correct version" $
+      expectFailure $ equiv [DontRemove] []
+
+    prop "PushTwice bug interpreter isn't equivalent to the correct version" $
+      expectFailure $ equiv [PushTwice] []
+
+    prop "The buggy interpreters are not equivalent to one another" $
+      expectFailure $ equiv [PushTwice] [DontRemove]
 
 
 data Bug
