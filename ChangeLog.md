@@ -1,5 +1,13 @@
 # Changelog for polysemy-check
 
+## v0.6.0.0 (2021-10-16)
+
+- Changed the frequencies of `Sem`'s `Arbitrary` instance, to create more
+    interesting programs.
+- Removed the program generator parameter of `prepropEquivalent`. It now just
+    uses the `Arbitrary` instance for `Sem`.
+- Added some new examples to the test suite.
+
 ## v0.5.0.0 (2021-10-14)
 
 - Flattened the module structure of `Polysemy.Check.Arbitrary`.
