@@ -175,7 +175,7 @@ type TypesOf (e :: Effect) = GTypesOf (RepK e)
 -- | @'SomeAction' e r@ is some action for effect @e@ in effect row @r@.
 data SomeAction e (r :: EffectRow) where
   SomeAction
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Function a, Show (e (Sem r) a))
       => e (Sem r) a
          -- ^
       -> SomeAction e r
@@ -189,7 +189,7 @@ instance Show (SomeAction e r) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEff (r :: EffectRow) where
   SomeEff
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Function a, Show (e (Sem r) a))
       => e (Sem r) a
          -- ^
       -> SomeEff r
@@ -274,6 +274,7 @@ instance
     , GenericK e
     , CoArbitrary a
     , GArbitraryK e (RepK e) r a
+    , Function a
     )
     => ArbitraryAction (a : as) e r
     where

@@ -44,6 +44,7 @@ dependencies:
 - QuickCheck
 - kind-generics <= 0.4.1.0
 - kind-generics-th
+- recover-rtti
 
 library:
   source-dirs: src

@@ -32,6 +32,20 @@ packages:
       sha256: 6871bd9281acf589296d0998a3d62892b036040ab10e74e8a0f356f68c194f4f
   original:
     hackage: markov-chain-usage-model-0.0.0@sha256:1afa95faeb9213c4d960a669190078b41b89169462b8edd910472980671ba8c0,2112
+- completed:
+    hackage: recover-rtti-0.4.0.0@sha256:2ce1e031ec0e34d736fa45f0149bbd55026f614939dc90ffd14a9c5d24093ff4,4423
+    pantry-tree:
+      size: 2410
+      sha256: d87d84c3f760c1b2540f74e4a301cd4e8294df891e8e4262e8bdd313bc8e0bfd
+  original:
+    hackage: recover-rtti-0.4.0.0@sha256:2ce1e031ec0e34d736fa45f0149bbd55026f614939dc90ffd14a9c5d24093ff4,4423
+- completed:
+    hackage: unordered-containers-0.2.12.0@sha256:164a47850c4536c8b7cc12f74578588cf3b6c331f04e671306d2dcb806284bb1,4978
+    pantry-tree:
+      size: 1388
+      sha256: 6c5fc0b867c11681dbadeb9cbcae10864abe3c5a4799410016c90871d3406c6e
+  original:
+    hackage: unordered-containers-0.2.12.0
 snapshots:
 - completed:
     size: 534126
