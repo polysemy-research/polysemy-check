@@ -1,5 +1,10 @@
 # Changelog for polysemy-check
 
+## v0.8.1.0 (2021-10-21)
+
+- Added a new function, `prepropAllCommutative` which ensures every effect
+    commutes with every other one.
+
 ## v0.8.0.0 (2021-10-21)
 
 - `prepropCommutative` now accepts arbitrary rows to draw actions from, rather
