@@ -1,7 +1,9 @@
 {-# LANGUAGE QuantifiedConstraints #-}
+
 module Polysemy.Check
   ( -- * Effect Properties
     prepropCommutative
+  , prepropAllCommutative
   , prepropEquivalent
   , prepropLaw
 
@@ -93,6 +95,29 @@ prepropCommutative lower = property @(Gen Property) $ do
         r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
         r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
         pure $ r1 === r2
+
+
+class AllCommutative (effs :: EffectRow) r where
+  ----------------------------------------------------------------------------
+  -- | @'prepropAllCommutative' \@effs \@r interpreter@ generates an invocation
+  -- of 'prepropCommutative' for every tail in @effs@. In essence, this ensures
+  -- that every effect in @effs@ commutes with every other one.
+  prepropAllCommutative
+      :: ( forall a. Show a => Show (f a)
+         , forall a. Eq a => Eq (f a)
+         , Members effs r
+         )
+      => (forall a. Sem r a -> IO (f a))
+      -> [Property]
+
+instance {-# OVERLAPPING #-} AllCommutative '[e] r where
+  prepropAllCommutative _ = []
+
+instance (ArbitraryEff r r, ArbitraryEff es r, ArbitraryEff '[e] r, AllCommutative es r)
+      => AllCommutative (e ': es) r where
+  prepropAllCommutative lower
+    = prepropCommutative @'[e] @es @r lower
+    : prepropAllCommutative @es @r lower
 
 
 ------------------------------------------------------------------------------
