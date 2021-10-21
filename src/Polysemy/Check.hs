@@ -55,7 +55,7 @@ import Test.QuickCheck
 -- For example,
 --
 -- @
--- 'prepropCommutative' \@(State Int) \@Trace \@EffStack runEffStack
+-- 'prepropCommutative' \@'[State Int] \@'[Trace] \@EffStack runEffStack
 -- @
 --
 -- will interleave random @State Int@ and @Trace@ actions, within a bigger
@@ -63,13 +63,13 @@ import Test.QuickCheck
 -- permuting the @State Int@ and @Trace@ effects changes the outcome of the
 -- entire computation.
 prepropCommutative
-    :: forall e1 e2 r f
+    :: forall effs1 effs2 r f
      . ( forall a. Show a => Show (f a)
        , forall a. Eq a => Eq (f a)
        )
     => ( ArbitraryEff r r
-       , ArbitraryEff '[e1] r
-       , ArbitraryEff '[e2] r
+       , ArbitraryEff effs1 r
+       , ArbitraryEff effs2 r
        )
     => (forall a. Sem r a -> IO (f a))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
@@ -77,8 +77,8 @@ prepropCommutative
     -> Property
 prepropCommutative lower = property @(Gen Property) $ do
   SomeEff m1 <- arbitraryActionFromRow @r @r
-  SomeEff e1 <- arbitraryActionFromRow @'[e1] @r
-  SomeEff e2 <- arbitraryActionFromRow @'[e2] @r
+  SomeEff e1 <- arbitraryActionFromRow @effs1 @r
+  SomeEff e2 <- arbitraryActionFromRow @effs2 @r
   SomeEff m2 <- arbitraryActionFromRow @r @r
   pure $
     counterexample "Effects are not commutative!" $
