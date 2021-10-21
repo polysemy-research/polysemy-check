@@ -88,7 +88,7 @@ prepropCommutative lower = property @(Gen Property) $ do
     counterexample ("e2 = " <> show e2) $
     counterexample ("k2  = " <> show m2) $
     counterexample "" $
-    counterexample "(e1 >> e2 >> k) /= (e2 >> e1 >> k)" $
+    counterexample "(k1 >> e1 >> e2 >> k2) /= (k1 >> e2 >> e1 >> k2)" $
       ioProperty $ do
         r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
         r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
