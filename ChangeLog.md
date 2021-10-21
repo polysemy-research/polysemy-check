@@ -1,5 +1,10 @@
 # Changelog for polysemy-check
 
+## v0.8.0.0 (2021-10-21)
+
+- `prepropCommutative` now accepts arbitrary rows to draw actions from, rather
+    than single effects.
+
 ## v0.7.0.0 (2021-10-16)
 
 - Removed the `x` type variable from `prepropEquivalent`, since it is safe to
