@@ -15,7 +15,7 @@ import Test.QuickCheck
 
 
 data Stack s m a where
-  Push      :: s -> Stack s m ()
+  Push      :: Show s => s -> Stack s m ()
   Pop       :: Stack s m (Maybe s)
   RemoveAll :: Stack s m ()
   Size      :: Stack s m Int

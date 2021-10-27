@@ -2,6 +2,7 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE QuantifiedConstraints #-}
 module Polysemy.Check.Arbitrary where
 
 import Control.Applicative (liftA2)
@@ -12,6 +13,10 @@ import Generics.Kind.Unexported
 import Polysemy
 import Polysemy.Internal
 import Test.QuickCheck
+import Data.Foldable (for_)
+import Control.Monad (void)
+import GHC.Base (Any)
+import Unsafe.Coerce (unsafeCoerce)
 
 
 ------------------------------------------------------------------------------
@@ -24,13 +29,93 @@ import Test.QuickCheck
 -- @e@, and will likely require an 'Arbitrary' instance.
 data family ExistentialFor (e :: Effect)
 
+newtype Compose f g a = Compose { getCompose :: f (g a) }
+  deriving (Show, Eq)
+
+instance Arbitrary (f (g a)) => Arbitrary (Compose f g a) where
+  arbitrary = fmap Compose arbitrary
+
+instance ArbitraryEffOfType a r r => Arbitrary (SomeEffOfType r a) where
+  arbitrary = arbitraryActionFromRowOfType @r @r @a
+
+instance ArbitraryEff r r => Arbitrary (SomeEff r) where
+  arbitrary = arbitraryActionFromRow @r @r
+
+class ArbitraryPreimage a where
+  type Preimage a
+  fromPreimage :: Preimage a -> a
+
+instance ArbitraryPreimage (Sem r a) where
+  type Preimage (Sem r a) = ([SomeEff r], SomeEffOfType r a)
+  fromPreimage (effs, SomeEffOfType m) = do
+    for_ effs sendSomeEff
+    send $ hoistEff m
+
+
+hoistEff :: forall e r a. (GHoist (RepK e) (Shrinkable r) (Sem r) a, GenericK e) => e (Shrinkable r) a -> e (Sem r) a
+hoistEff = undefined -- toK . ghoist (fromPreimage . getCompose) . fromK
+
+sendSomeEff :: SomeEff r -> Sem r ()
+sendSomeEff (SomeEff e) = void $ send $ hoistEff e
+
+type Shrinkable r = Compose ((,) [SomeEff r]) (SomeEffOfType r)
+
+class GHoist (f :: LoT Effect -> Type) m n a where
+  ghoist :: (forall x. m x -> n x) -> f (LoT2 m a) -> f (LoT2 n a)
+
+instance GHoist f m n a => GHoist (M1 _1 _2 f) m n a where
+  ghoist nt = M1 . ghoist nt . unM1
+
+instance (GHoist f m n a, GHoist g m n a) => GHoist (f :+: g) m n a where
+  ghoist nt (L1 f) = L1 $ ghoist nt f
+  ghoist nt (R1 g) = R1 $ ghoist nt g
+
+instance (GHoist f m n a, GHoist g m n a) => GHoist (f :*: g) m n a where
+  ghoist nt (f :*: g) = ghoist nt f :*: ghoist nt g
+
+
+instance GHoist (Field (Var0 ':@: Var1)) m n a where
+  ghoist nt (Field x) = Field $ nt x
+
+instance GHoist (Field ('Kon c)) m n a where
+  ghoist _ (Field x) = Field x
+
+instance GHoist (Field f) m n a =>
+         GHoist (Field ('Kon ((->) c) ':@: f)) m n a where
+  ghoist nt (Field x) = Field $ unField . ghoist @(Field f) nt . Field @f @(LoT2 m a) . x
+
+instance (GHoist f m n a) => GHoist (c :=>: f) m n a where
+  ghoist nt (SuchThat x) = undefined -- SuchThat $ ghoist nt x
+
+-- instance (GHoist f m n a) => GHoist ('Kon ((~~) b) ':@: Var1 :=>: f) m n a where
+--   ghoist nt (SuchThat x) = SuchThat $ ghoist nt x
+
+-- instance (GHoist f m n a) => GHoist ('Kon (~~) ':@: Var1 ':@: 'Kon x :=>: f) m n a where
+--   ghoist nt (SuchThat x) = SuchThat $ ghoist nt x
+
+class (SubstRep' f t (LoT2 m a), SubstRep' f t (LoT2 n a), GHoist (SubstRep f t) m n a) => GHoist_SubstRep f t m n a
+instance (SubstRep' f t (LoT2 m a), SubstRep' f t (LoT2 n a), GHoist (SubstRep f t) m n a) => GHoist_SubstRep f t m n a
+
+with :: forall c t. (c => t) -> (c => t)
+with x = x
+
+instance (forall x. GHoist_SubstRep f x m n a) => GHoist (Exists Type f) m n a where
+  ghoist nt (Exists (x :: f (t ':&&: z))) =
+    with @(GHoist_SubstRep f t m n a) $
+      Exists $ unsubstRep @_ @_ @_ @t $ ghoist @(SubstRep f t) nt $ substRep @_ @_ @_ @t x
+
+instance GHoist U1 m n a where
+  ghoist _ U1 = U1
+
+
+
 
 ------------------------------------------------------------------------------
 -- | Given @'GArbitraryK' e ('RepK' e) r a@, this typeclass computes
--- generators for every well-typed constructor of @e (Sem r) a@. It is capable
+-- generators for every well-typed constructor of @e (Shrinkable r) a@. It is capable
 -- of building generators for GADTs.
 class GArbitraryK (e :: Effect) (f :: LoT Effect -> Type) (r :: EffectRow) (a :: Type)  where
-  garbitraryk :: [Gen (f (LoT2 (Sem r) a))]
+  garbitraryk :: [Gen (f (LoT2 (Shrinkable r) a))]
 
 instance GArbitraryK e U1 r a where
   garbitraryk = pure $ pure U1
@@ -38,12 +123,12 @@ instance GArbitraryK e U1 r a where
 instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :*: g) r a where
   garbitraryk = liftA2 (liftA2 (:*:)) (garbitraryk @e) (garbitraryk @e)
 
-instance Arbitrary (Interpret f (LoT2 (Sem r) a)) => GArbitraryK e (Field f) r a where
+instance Arbitrary (Interpret f (LoT2 (Shrinkable r) a)) => GArbitraryK e (Field f) r a where
   garbitraryk = pure $ fmap Field arbitrary
 
 instance
     ( GArbitraryK e (SubstRep f (ExistentialFor e)) r a
-    , SubstRep' f (ExistentialFor e) (LoT2 (Sem r) a)
+    , SubstRep' f (ExistentialFor e) (LoT2 (Shrinkable r) a)
     ) => GArbitraryK e (Exists Type f) r a where
   garbitraryk = fmap (Exists . unsubstRep @_ @_ @_ @(ExistentialFor e)) <$>
     garbitraryk @e @(SubstRep f (ExistentialFor e)) @r @a
@@ -52,7 +137,7 @@ instance (GArbitraryK e f r a, GArbitraryK e g r a) => GArbitraryK e (f :+: g) r
   garbitraryk = fmap (fmap L1) (garbitraryk @e @f)
              <> fmap (fmap R1) (garbitraryk @e @g)
 
-instance (Interpret c (LoT2 (Sem r) a), GArbitraryK e f r a) => GArbitraryK e (c :=>: f) r a where
+instance (Interpret c (LoT2 (Shrinkable r) a), GArbitraryK e f r a) => GArbitraryK e (c :=>: f) r a where
   garbitraryk = fmap (fmap SuchThat) (garbitraryk @e @f)
 
 instance {-# OVERLAPPING #-} GArbitraryK e (c1 :=>: (c2 :=>: f)) r a
@@ -82,25 +167,27 @@ instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
 
 instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
       => Arbitrary (Sem r a) where
-  arbitrary =
-    let terminal = [pure <$> arbitrary]
-     in sized $ \n ->
-          case n <= 1 of
-            True -> oneof terminal
-            False -> frequency $
-              [ (2,) $ do
-                  SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
-                  pure $ send e
-              , (8,) $ do
-                  SomeEff e <- arbitraryActionFromRow @r @r
-                  k <- liftArbitrary $ scale (`div` 2) arbitrary
-                  pure $ send e >>= k
-              ] <> fmap (1,) terminal
+  arbitrary = undefined
+    -- let terminal = [pure <$> arbitrary]
+    --  in sized $ \n ->
+    --       case n <= 1 of
+    --         True -> oneof terminal
+    --         False -> frequency $
+    --           [ (2,) $ do
+    --               SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
+    --               undefined
+    --               -- pure $ send e
+    --           , (8,) $ do
+    --               SomeEff e <- arbitraryActionFromRow @r @r
+    --               -- k <- liftArbitrary $ scale (`div` 2) arbitrary
+    --               undefined
+    --               -- pure $ send e >>= k
+    --           ] <> fmap (1,) terminal
 
 ------------------------------------------------------------------------------
 -- | @genEff \@e \@r \@a@ gets a generator capable of producing every
--- well-typed GADT constructor of @e (Sem r) a@.
-genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Sem r) a)
+-- well-typed GADT constructor of @e (Shrinkable r) a@.
+genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Shrinkable r) a)
 genEff = fmap toK $ oneof $ garbitraryk @e @(RepK e) @r
 
 
@@ -119,7 +206,7 @@ arbitraryAction = oneof $ genSomeAction @(TypesOf e) @e @r
 arbitraryActionOfType
     :: forall e a r
      . (GenericK e, GArbitraryK e (RepK e) r a)
-    => Gen (e (Sem r) a)
+    => Gen (e (Shrinkable r) a)
        -- ^
 arbitraryActionOfType = genEff @e @r @a
 
@@ -175,8 +262,15 @@ type TypesOf (e :: Effect) = GTypesOf (RepK e)
 -- | @'SomeAction' e r@ is some action for effect @e@ in effect row @r@.
 data SomeAction e (r :: EffectRow) where
   SomeAction
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
-      => e (Sem r) a
+      :: ( Member e r
+         , Eq a
+         , Show a
+         , CoArbitrary a
+         , Show (e (Shrinkable r) a)
+         , GenericK e
+         , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         )
+      => e (Shrinkable r) a
          -- ^
       -> SomeAction e r
          -- ^
@@ -189,8 +283,15 @@ instance Show (SomeAction e r) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEff (r :: EffectRow) where
   SomeEff
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
-      => e (Sem r) a
+      :: ( Member e r
+         , Eq a
+         , Show a
+         , CoArbitrary a
+         , Show (e (Shrinkable r) a)
+         , GenericK e
+         , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         )
+      => e (Shrinkable r) a
          -- ^
       -> SomeEff r
          -- ^
@@ -203,8 +304,15 @@ instance Show (SomeEff r) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEffOfType (r :: EffectRow) a where
   SomeEffOfType
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
-      => e (Sem r) a
+      :: ( Member e r
+         , Eq a
+         , Show a
+         , CoArbitrary a
+         , Show (e (Shrinkable r) a)
+         , GenericK e
+         , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         )
+      => e (Shrinkable r) a
          -- ^
       -> SomeEffOfType r a
          -- ^
@@ -242,12 +350,14 @@ instance ArbitraryEffOfType a '[] r where
 instance
     ( Eq a
     , Show a
-    , Show (e (Sem r) a)
+    , Show (e (Shrinkable r) a)
     , ArbitraryEffOfType a es r
     , GenericK e
     , GArbitraryK e (RepK e) r a
     , CoArbitrary a
     , Member e r
+    , GenericK e
+    , GHoist (RepK e) (Shrinkable r) (Sem r) a
     )
     => ArbitraryEffOfType a (e ': es) r
     where
@@ -270,10 +380,12 @@ instance
     , Eq a
     , Show a
     , Member e r
-    , Show (e (Sem r) a)
+    , Show (e (Shrinkable r) a)
     , GenericK e
     , CoArbitrary a
     , GArbitraryK e (RepK e) r a
+    , GenericK e
+    , GHoist (RepK e) (Shrinkable r) (Sem r) a
     )
     => ArbitraryAction (a : as) e r
     where

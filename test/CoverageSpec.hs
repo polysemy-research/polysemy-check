@@ -1,5 +1,6 @@
 module CoverageSpec where
 
+import GHC.Generics
 import Polysemy.Check
 import Polysemy.Error
 import Polysemy.Input

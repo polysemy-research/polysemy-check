@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -ddump-to-file #-}
+{-# OPTIONS_GHC -ddump-tc-trace #-}
+
 module WeirdEffectsSpec where
 
 import Data.Typeable
@@ -6,9 +9,10 @@ import Polysemy.Check
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
+import Generics.Kind
 
 
-data MyEffect m a where
+data MyEffect (m :: * -> *) a where
   -- | Here, @e@ is existential!
   CanShow :: (Show e, Typeable e) => e -> MyEffect m ()
 
@@ -38,4 +42,7 @@ spec = do
     pure $ case e of
       CanShow t ->
         cast t `shouldBe` Just Hello
+
+
+
 

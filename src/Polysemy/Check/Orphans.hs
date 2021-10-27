@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE QuantifiedConstraints #-}
 module Polysemy.Check.Orphans () where
 
 import Generics.Kind.TH
@@ -33,21 +34,21 @@ deriveGenericK ''Trace
 deriveGenericK ''View
 deriveGenericK ''Writer
 
-deriving instance Show s => Show (State s (Sem r) a)
-deriving instance Show o => Show (Output o (Sem r) a)
-deriving instance Show (Input i (Sem r) a)
-deriving instance Show (Fail (Sem r) a)
-deriving instance Show (Trace (Sem r) a)
+deriving instance Show s => Show (State s m a)
+deriving instance Show o => Show (Output o m a)
+deriving instance Show (Input i m a)
+deriving instance Show (Fail m a)
+deriving instance Show (Trace m a)
 
-instance Show e => Show (Error e (Sem r) a) where
+instance (Show e, Show (m a)) => Show (Error e m a) where
   show (Throw e2) = "Throw " <> show e2
-  show (Catch _ _) = "Catch <m> <k>"
+  show (Catch m _) = "Catch " <> show m <> " <k>"
 
-instance Show (Reader e (Sem r) a) where
+instance Show (m a) => Show (Reader e m a) where
   show Ask = "Ask"
-  show (Local _ _) = "Local <f> <m>"
+  show (Local _ m) = "Local <f> " <> show m
 
-instance Show e => Show (Writer e (Sem r) a) where
+instance Show e => Show (Writer e m a) where
   show (Tell e) = "Tell " <> show e
   show (Listen _) = "Listen <m>"
   show (Pass _) = "Pass <m>"

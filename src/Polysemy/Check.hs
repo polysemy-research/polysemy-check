@@ -92,8 +92,8 @@ prepropCommutative lower = property @(Gen Property) $ do
     counterexample "" $
     counterexample "(k1 >> e1 >> e2 >> k2) /= (k1 >> e2 >> e1 >> k2)" $
       ioProperty $ do
-        r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
-        r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
+        r1 <- lower $ send (hoistEff m1) >> send (hoistEff e1) >> send (hoistEff e2) >> send (hoistEff m2)
+        r2 <- lower $ send (hoistEff m1) >> send (hoistEff e2) >> send (hoistEff e1) >> send (hoistEff m2)
         pure $ r1 === r2
 
 
@@ -152,15 +152,15 @@ prepropLaw g lower = property @(Gen Property) $ do
       ioProperty $ do
         a1 <-
           lower $ do
-            void $ send pre
+            void $ send $ hoistEff pre
             a1 <- m1
-            r <- send post
+            r <- send $ hoistEff post
             pure (a1, r)
         a2 <-
           lower $ do
-            void $ send pre
+            void $ send $ hoistEff pre
             a2 <- m2
-            r <- send post
+            r <- send $ hoistEff post
             pure (a2, r)
         pure $ a1 === a2
 
