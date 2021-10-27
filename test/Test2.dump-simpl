@@ -1,0 +1,312 @@
+
+==================== Tidy Core ====================
+2021-10-22 15:05:54.339609632 UTC
+
+Result size of Tidy Core
+  = {terms: 31, types: 210, coercions: 502, joins: 0/0}
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+$trModule1_rn3s :: ghc-prim-0.5.3:GHC.Prim.Addr#
+[GblId, Caf=NoCafRefs, Unf=OtherCon []]
+$trModule1_rn3s = "main"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+$trModule2_rn3A :: ghc-prim-0.5.3:GHC.Types.TrName
+[GblId, Caf=NoCafRefs, Unf=OtherCon []]
+$trModule2_rn3A = ghc-prim-0.5.3:GHC.Types.TrNameS $trModule1_rn3s
+
+-- RHS size: {terms: 1, types: 0, coercions: 0, joins: 0/0}
+$trModule3_rn3B :: ghc-prim-0.5.3:GHC.Prim.Addr#
+[GblId, Caf=NoCafRefs, Unf=OtherCon []]
+$trModule3_rn3B = "Test2"#
+
+-- RHS size: {terms: 2, types: 0, coercions: 0, joins: 0/0}
+$trModule4_rn3C :: ghc-prim-0.5.3:GHC.Types.TrName
+[GblId, Caf=NoCafRefs, Unf=OtherCon []]
+$trModule4_rn3C = ghc-prim-0.5.3:GHC.Types.TrNameS $trModule3_rn3B
+
+-- RHS size: {terms: 3, types: 0, coercions: 0, joins: 0/0}
+Test2.$trModule :: ghc-prim-0.5.3:GHC.Types.Module
+[GblId, Caf=NoCafRefs, Unf=OtherCon []]
+Test2.$trModule
+  = ghc-prim-0.5.3:GHC.Types.Module $trModule2_rn3A $trModule4_rn3C
+
+-- RHS size: {terms: 3, types: 14, coercions: 0, joins: 0/0}
+$dEmptyClass_rn3D
+  :: Test.EmptyClass ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7))
+[GblId]
+$dEmptyClass_rn3D
+  = Test.$fEmptyClassaBranch
+      @ ghc-prim-0.5.3:GHC.Types.Nat
+      @ ('Test.Two 5 9)
+      @ ('Test.One 7)
+      @ 3
+      (Test.$fEmptyClassaTwo @ ghc-prim-0.5.3:GHC.Types.Nat @ 5 @ 9)
+      (Test.$fEmptyClassaOne @ ghc-prim-0.5.3:GHC.Types.Nat @ 7)
+
+-- RHS size: {terms: 3, types: 16, coercions: 0, joins: 0/0}
+$dEmptyClass1_rn3E
+  :: Test.EmptyClass
+       ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+[GblId]
+$dEmptyClass1_rn3E
+  = Test.$fEmptyClassaBranch
+      @ ghc-prim-0.5.3:GHC.Types.Nat
+      @ ('Test.Two 4 8)
+      @ ('Test.Two 6 10)
+      @ 2
+      (Test.$fEmptyClassaTwo @ ghc-prim-0.5.3:GHC.Types.Nat @ 4 @ 8)
+      (Test.$fEmptyClassaTwo @ ghc-prim-0.5.3:GHC.Types.Nat @ 6 @ 10)
+
+-- RHS size: {terms: 3, types: 23, coercions: 0, joins: 0/0}
+$dEmptyClass2_rn3F
+  :: Test.EmptyClass
+       ('Test.Branch
+          1
+          ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+          ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7)))
+[GblId]
+$dEmptyClass2_rn3F
+  = Test.$fEmptyClassaBranch
+      @ ghc-prim-0.5.3:GHC.Types.Nat
+      @ ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+      @ ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7))
+      @ 1
+      $dEmptyClass1_rn3E
+      $dEmptyClass_rn3D
+
+-- RHS size: {terms: 4, types: 100, coercions: 502, joins: 0/0}
+blah :: ()
+[GblId]
+blah
+  = break<0>()
+    $ @ 'ghc-prim-0.5.3:GHC.Types.LiftedRep
+      @ (Proxy (ToTree '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
+      @ ()
+      (requireEmptyClass
+         @ ghc-prim-0.5.3:GHC.Types.Nat
+         @ (ToTree '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+         ($dEmptyClass2_rn3F
+          `cast` ((Test.EmptyClass
+                     <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                     (('Test.Branch
+                         <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                         <1>_N
+                         (('Test.Branch
+                             <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                             <2>_N
+                             (Sym (Test.D:R:ToTree[2]
+                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N <4>_N <8>_N) ; (ToTree
+                                                                                          <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                          (((':)
+                                                                                              <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                              <4>_N
+                                                                                              (((':)
+                                                                                                  <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                  <8>_N
+                                                                                                  (Sym (Test.D:R:Evens[0]
+                                                                                                            <ghc-prim-0.5.3:GHC.Types.Nat>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                             <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                             <8>_N
+                                                                                                                                                             <10>_N
+                                                                                                                                                             <'[]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                     <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                     <4>_N
+                                                                                                                                                                                     <6>_N
+                                                                                                                                                                                     <'[8,
+                                                                                                                                                                                        10]>_N)))_N)
+                             (Sym (Test.D:R:ToTree[2]
+                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N <6>_N <10>_N) ; (ToTree
+                                                                                           <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                           (((':)
+                                                                                               <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                               <6>_N
+                                                                                               (Sym (Test.D:R:Evens[1]
+                                                                                                         <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                         <10>_N)))_N ; (Sym (Test.D:R:Evens[2]
+                                                                                                                                 <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                 <6>_N
+                                                                                                                                 <8>_N
+                                                                                                                                 <'[10]>_N) ; Sym (Test.D:R:Odds[1]
+                                                                                                                                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                       <4>_N
+                                                                                                                                                       <'[6,
+                                                                                                                                                          8,
+                                                                                                                                                          10]>_N))))_N))_N ; (Sym (Test.D:R:ToTree[3]
+                                                                                                                                                                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                       <2>_N
+                                                                                                                                                                                       <'[4,
+                                                                                                                                                                                          6,
+                                                                                                                                                                                          8,
+                                                                                                                                                                                          10]>_N) ; (ToTree
+                                                                                                                                                                                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                       (((':)
+                                                                                                                                                                                                           <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                           <2>_N
+                                                                                                                                                                                                           (((':)
+                                                                                                                                                                                                               <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                               <4>_N
+                                                                                                                                                                                                               (((':)
+                                                                                                                                                                                                                   <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                   <6>_N
+                                                                                                                                                                                                                   (((':)
+                                                                                                                                                                                                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                       <8>_N
+                                                                                                                                                                                                                       (Sym (Test.D:R:Evens[1]
+                                                                                                                                                                                                                                 <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                 <10>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                        <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                        <8>_N
+                                                                                                                                                                                                                                                        <9>_N
+                                                                                                                                                                                                                                                        <'[10]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                  <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                  <6>_N
+                                                                                                                                                                                                                                                                                  <7>_N
+                                                                                                                                                                                                                                                                                  <'[8,
+                                                                                                                                                                                                                                                                                     9,
+                                                                                                                                                                                                                                                                                     10]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                            <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                            <4>_N
+                                                                                                                                                                                                                                                                                                            <5>_N
+                                                                                                                                                                                                                                                                                                            <'[6,
+                                                                                                                                                                                                                                                                                                               7,
+                                                                                                                                                                                                                                                                                                               8,
+                                                                                                                                                                                                                                                                                                               9,
+                                                                                                                                                                                                                                                                                                               10]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                                                      <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                                      <2>_N
+                                                                                                                                                                                                                                                                                                                                      <3>_N
+                                                                                                                                                                                                                                                                                                                                      <'[4,
+                                                                                                                                                                                                                                                                                                                                         5,
+                                                                                                                                                                                                                                                                                                                                         6,
+                                                                                                                                                                                                                                                                                                                                         7,
+                                                                                                                                                                                                                                                                                                                                         8,
+                                                                                                                                                                                                                                                                                                                                         9,
+                                                                                                                                                                                                                                                                                                                                         10]>_N)))_N))
+                         (('Test.Branch
+                             <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                             <3>_N
+                             (Sym (Test.D:R:ToTree[2]
+                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N <5>_N <9>_N) ; (ToTree
+                                                                                          <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                          (((':)
+                                                                                              <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                              <5>_N
+                                                                                              (Sym (Test.D:R:Evens[1]
+                                                                                                        <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                        <9>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                              <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                              <5>_N
+                                                                                                                              <7>_N
+                                                                                                                              <'[9]>_N)))_N)
+                             (Sym (Test.D:R:ToTree[1]
+                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N <7>_N) ; (ToTree
+                                                                                    <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                    (((':)
+                                                                                        <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                        <7>_N
+                                                                                        (Sym (Test.D:R:Evens[0]
+                                                                                                  <ghc-prim-0.5.3:GHC.Types.Nat>_N)))_N ; (Sym (Test.D:R:Evens[2]
+                                                                                                                                                    <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                    <7>_N
+                                                                                                                                                    <9>_N
+                                                                                                                                                    <'[]>_N) ; Sym (Test.D:R:Odds[1]
+                                                                                                                                                                        <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                        <5>_N
+                                                                                                                                                                        <'[7,
+                                                                                                                                                                           9]>_N))))_N))_N ; (Sym (Test.D:R:ToTree[3]
+                                                                                                                                                                                                       <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                       <3>_N
+                                                                                                                                                                                                       <'[5,
+                                                                                                                                                                                                          7,
+                                                                                                                                                                                                          9]>_N) ; (ToTree
+                                                                                                                                                                                                                      <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                      (((':)
+                                                                                                                                                                                                                          <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                          <3>_N
+                                                                                                                                                                                                                          (((':)
+                                                                                                                                                                                                                              <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                              <5>_N
+                                                                                                                                                                                                                              (((':)
+                                                                                                                                                                                                                                  <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                  <7>_N
+                                                                                                                                                                                                                                  (((':)
+                                                                                                                                                                                                                                      <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                      <9>_N
+                                                                                                                                                                                                                                      (Sym (Test.D:R:Evens[0]
+                                                                                                                                                                                                                                                <ghc-prim-0.5.3:GHC.Types.Nat>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                 <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                 <9>_N
+                                                                                                                                                                                                                                                                                                 <10>_N
+                                                                                                                                                                                                                                                                                                 <'[]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                                         <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                         <7>_N
+                                                                                                                                                                                                                                                                                                                         <8>_N
+                                                                                                                                                                                                                                                                                                                         <'[9,
+                                                                                                                                                                                                                                                                                                                            10]>_N)))_N ; Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                                                                   <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                                                   <5>_N
+                                                                                                                                                                                                                                                                                                                                                   <6>_N
+                                                                                                                                                                                                                                                                                                                                                   <'[7,
+                                                                                                                                                                                                                                                                                                                                                      8,
+                                                                                                                                                                                                                                                                                                                                                      9,
+                                                                                                                                                                                                                                                                                                                                                      10]>_N)))_N ; (Sym (Test.D:R:Evens[2]
+                                                                                                                                                                                                                                                                                                                                                                              <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                                                                              <3>_N
+                                                                                                                                                                                                                                                                                                                                                                              <4>_N
+                                                                                                                                                                                                                                                                                                                                                                              <'[5,
+                                                                                                                                                                                                                                                                                                                                                                                 6,
+                                                                                                                                                                                                                                                                                                                                                                                 7,
+                                                                                                                                                                                                                                                                                                                                                                                 8,
+                                                                                                                                                                                                                                                                                                                                                                                 9,
+                                                                                                                                                                                                                                                                                                                                                                                 10]>_N) ; Sym (Test.D:R:Odds[1]
+                                                                                                                                                                                                                                                                                                                                                                                                    <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                                                                                                    <2>_N
+                                                                                                                                                                                                                                                                                                                                                                                                    <'[3,
+                                                                                                                                                                                                                                                                                                                                                                                                       4,
+                                                                                                                                                                                                                                                                                                                                                                                                       5,
+                                                                                                                                                                                                                                                                                                                                                                                                       6,
+                                                                                                                                                                                                                                                                                                                                                                                                       7,
+                                                                                                                                                                                                                                                                                                                                                                                                       8,
+                                                                                                                                                                                                                                                                                                                                                                                                       9,
+                                                                                                                                                                                                                                                                                                                                                                                                       10]>_N))))_N)))_N ; Sym (Test.D:R:ToTree[3]
+                                                                                                                                                                                                                                                                                                                                                                                                                                    <ghc-prim-0.5.3:GHC.Types.Nat>_N
+                                                                                                                                                                                                                                                                                                                                                                                                                                    <1>_N
+                                                                                                                                                                                                                                                                                                                                                                                                                                    <'[2,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       3,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       4,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       5,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       6,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       7,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       8,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       9,
+                                                                                                                                                                                                                                                                                                                                                                                                                                       10]>_N)))_R
+                  :: Test.EmptyClass
+                       ('Test.Branch
+                          1
+                          ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+                          ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7)))
+                     ~R# Test.EmptyClass (ToTree '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))))
+      ((Data.Proxy.Proxy
+          @ (Test.Tree ghc-prim-0.5.3:GHC.Types.Nat)
+          @ ('Test.Branch
+               1
+               ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+               ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7))))
+       `cast` ((Proxy
+                  <Test.Tree ghc-prim-0.5.3:GHC.Types.Nat>_N
+                  Univ(phantom phantom <Test.Tree ghc-prim-0.5.3:GHC.Types.Nat>_N
+                       :: 'Test.Branch
+                            1
+                            ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+                            ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7)), ToTree
+                                                                              '[1, 2, 3, 4, 5, 6, 7,
+                                                                                8, 9, 10]))_R
+               :: Proxy
+                    ('Test.Branch
+                       1
+                       ('Test.Branch 2 ('Test.Two 4 8) ('Test.Two 6 10))
+                       ('Test.Branch 3 ('Test.Two 5 9) ('Test.One 7)))
+                  ~R# Proxy (ToTree '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10])))
+
+

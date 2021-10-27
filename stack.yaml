@@ -4,9 +4,12 @@ packages:
 - .
 
 extra-deps:
-- polysemy-1.6.0.0
+- ../polysemy
 - polysemy-plugin-0.4.0.0@sha256:456d3c22a6363a7be8b0856a40109c44bc9ad58e702fbc74679f2f0e89c3d309,3148
 - quickcheck-state-machine-0.7.1
 - markov-chain-usage-model-0.0.0@sha256:1afa95faeb9213c4d960a669190078b41b89169462b8edd910472980671ba8c0,2112
+- QuickCheck-2.14.2
+- random-1.2.1
+- splitmix-0.1.0.3
 
 

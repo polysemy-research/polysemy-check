@@ -5,13 +5,6 @@
 
 packages:
 - completed:
-    hackage: polysemy-1.6.0.0@sha256:29a73b1bf3d0049b12041016b7ee25e76bd8f6e99f9c37c2dde2b46368246697,6184
-    pantry-tree:
-      size: 4577
-      sha256: c4ca508b4a6786fc27e0f484344ce8dba119ea2f7fe47fb7379a51313a94cd10
-  original:
-    hackage: polysemy-1.6.0.0
-- completed:
     hackage: polysemy-plugin-0.4.0.0@sha256:456d3c22a6363a7be8b0856a40109c44bc9ad58e702fbc74679f2f0e89c3d309,3148
     pantry-tree:
       size: 1221
@@ -32,6 +25,27 @@ packages:
       sha256: 6871bd9281acf589296d0998a3d62892b036040ab10e74e8a0f356f68c194f4f
   original:
     hackage: markov-chain-usage-model-0.0.0@sha256:1afa95faeb9213c4d960a669190078b41b89169462b8edd910472980671ba8c0,2112
+- completed:
+    hackage: QuickCheck-2.14.2@sha256:4ce29211223d5e6620ebceba34a3ca9ccf1c10c0cf387d48aea45599222ee5aa,7736
+    pantry-tree:
+      size: 2315
+      sha256: 2fe423d0ed7cd64f0f165d708779f48814e66c4f181c568468134af55d86a5f8
+  original:
+    hackage: QuickCheck-2.14.2
+- completed:
+    hackage: random-1.2.1@sha256:8bee24dc0c985a90ee78d94c61f8aed21c49633686f0f1c14c5078d818ee43a2,6598
+    pantry-tree:
+      size: 1528
+      sha256: 8bdc994ce41f43624ab42302a881fe5a0f81d965f5d238841e24943664681a06
+  original:
+    hackage: random-1.2.1
+- completed:
+    hackage: splitmix-0.1.0.3@sha256:fc3aae74c467f4b608050bef53aec17904a618731df9407e655d8f3bf8c32d5c,6049
+    pantry-tree:
+      size: 1400
+      sha256: 8290f921f41c3628a6c9871502e57fd1d25f5954967afbf4ed16717fd8d3656f
+  original:
+    hackage: splitmix-0.1.0.3
 snapshots:
 - completed:
     size: 534126

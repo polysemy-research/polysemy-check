@@ -2,6 +2,7 @@
 
 module Polysemy.Check.Orphans () where
 
+import Generics.Kind
 import Generics.Kind.TH
 import Polysemy
 import Polysemy.Error

@@ -43,6 +43,7 @@ import Polysemy.Check.Orphans ()
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Test.QuickCheck
+import Test.QuickCheck.Preimage
 
 
 ------------------------------------------------------------------------------
@@ -78,10 +79,10 @@ prepropCommutative
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropCommutative lower = property @(Gen Property) $ do
-  SomeEff m1 <- arbitraryActionFromRow @r @r
-  SomeEff e1 <- arbitraryActionFromRow @effs1 @r
-  SomeEff e2 <- arbitraryActionFromRow @effs2 @r
-  SomeEff m2 <- arbitraryActionFromRow @r @r
+  m1 <- arbitraryActionFromRow @r @r
+  e1 <- arbitraryActionFromRow @effs1 @r
+  e2 <- arbitraryActionFromRow @effs2 @r
+  m2 <- arbitraryActionFromRow @r @r
   pure $
     counterexample "Effects are not commutative!" $
     counterexample "" $
@@ -92,8 +93,8 @@ prepropCommutative lower = property @(Gen Property) $ do
     counterexample "" $
     counterexample "(k1 >> e1 >> e2 >> k2) /= (k1 >> e2 >> e1 >> k2)" $
       ioProperty $ do
-        r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
-        r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
+        r1 <- lower $ sendSomeEff m1 >> sendSomeEff e1 >> sendSomeEff e2 >> sendSomeEff m2
+        r2 <- lower $ sendSomeEff m1 >> sendSomeEff e2 >> sendSomeEff e1 >> sendSomeEff m2
         pure $ r1 === r2
 
 
@@ -143,24 +144,24 @@ prepropLaw
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropLaw g lower = property @(Gen Property) $ do
-  SomeEff pre <- arbitraryActionFromRow @effs @r
+  pre <- arbitraryActionFromRow @effs @r
   (m1, m2) <- g
-  SomeEff post <- arbitraryActionFromRow @effs @r
+  post <- arbitraryActionFromRow @effs @r
   pure $
     counterexample ("before = " <> show pre) $
     counterexample ("after  = " <> show post) $
       ioProperty $ do
         a1 <-
           lower $ do
-            void $ send pre
+            void $ sendSomeEff pre
             a1 <- m1
-            r <- send post
+            r <- sendSomeEff post
             pure (a1, r)
         a2 <-
           lower $ do
-            void $ send pre
+            void $ sendSomeEff pre
             a2 <- m2
-            r <- send post
+            r <- sendSomeEff post
             pure (a2, r)
         pure $ a1 === a2
 
@@ -171,8 +172,7 @@ prepropLaw g lower = property @(Gen Property) $ do
 prepropEquivalent
     :: forall effs r1 r2 f
      . ( forall a. Show a => Show (f a)
-       , forall a. Eq a => Eq (f a)
-       )
+       , forall a. Eq a => Eq (f a), ArbitraryEff effs effs, ArbitraryEffOfType Int effs effs, ArbitraryPreimage (Sem effs Int), Arbitrary (Preimage (Sem effs Int)), Show (Preimage (Sem effs Int)))
     => ( Inject effs r1
        , Inject effs r2
        , Arbitrary (Sem effs Int)
@@ -183,24 +183,10 @@ prepropEquivalent
     -> (forall a. Sem r2 a -> IO (f a))
        -- ^ The second interpreter to prove equivalence for.
     -> Property
-prepropEquivalent int1 int2 = property $ do
-  SomeSem sem <- liftGen @effs @Int
-  pure $ ioProperty $ do
-    a1 <- int1 sem
-    a2 <- int2 sem
-    pure $ a1 === a2
-
-
-newtype SomeSem effs a = SomeSem
-  { _getSomeSem :: forall r. (Inject effs r) => Sem r a
-  }
-
-
-liftGen
-    :: forall effs a
-     . Arbitrary (Sem effs a)
-    => Gen (SomeSem effs a)
-liftGen = do
-  a <- arbitrary @(Sem effs a)
-  pure $ SomeSem $ inject a
+prepropEquivalent int1 int2 =
+  forallPreimage $ \(SomeSem sem :: SomeSem effs Int) ->
+    ioProperty $ do
+      a1 <- int1 sem
+      a2 <- int2 sem
+      pure $ a1 === a2
 

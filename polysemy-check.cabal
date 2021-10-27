@@ -32,6 +32,7 @@ library
       Polysemy.Check.Arbitrary
       Polysemy.Check.Orphans
       Polysemy.Internal.Union.Inject
+      Test.QuickCheck.Preimage
   other-modules:
       Paths_polysemy_check
   hs-source-dirs:
@@ -73,6 +74,8 @@ test-suite test
       EquivSpec
       ExampleSpec
       LawSpec
+      Test
+      Test2
       WeirdEffectsSpec
       Paths_polysemy_check
   hs-source-dirs:

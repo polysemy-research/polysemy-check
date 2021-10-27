@@ -2,6 +2,7 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE QuantifiedConstraints #-}
 module Polysemy.Check.Arbitrary where
 
 import Control.Applicative (liftA2)
@@ -12,6 +13,42 @@ import Generics.Kind.Unexported
 import Polysemy
 import Polysemy.Internal
 import Test.QuickCheck
+import Test.QuickCheck.Arbitrary
+import Polysemy.Internal.Union
+import Data.Functor.Compose
+import Data.Functor.Identity
+import Data.Foldable (for_)
+import Control.Monad (void)
+import GHC.Generics
+import Polysemy.Internal.Union.Inject (Inject, inject)
+
+class ArbitraryPreimage a where
+  type Preimage a
+  fromPreimage :: Preimage a -> a
+
+instance (ArbitraryPreimage (Sem r a))
+      => ArbitraryPreimage (SomeSem r a) where
+  type Preimage (SomeSem r a) = Preimage (Sem r a)
+  fromPreimage s = SomeSem $ inject $ fromPreimage @(Sem r a) s
+
+instance ArbitraryPreimage (Sem r a) where
+  type Preimage (Sem r a) = ([SomeEff r], SomeEffOfType r a)
+  fromPreimage (effs, SomeEffOfType m) = do
+    for_ effs sendSomeEff
+    send m
+
+newtype SomeSem effs a = SomeSem
+  { _getSomeSem :: forall r. (Inject effs r) => Sem r a
+  }
+
+sendSomeEff :: SomeEff r -> Sem r ()
+sendSomeEff (SomeEff e) = void $ send $ hoistMe (fromPreimage . getCompose) e
+
+hoistMe :: (GHoist (RepK e) n a, GenericK e) => (forall x. m x -> n x) -> e m a -> e n a
+hoistMe nt = toK . ghoist nt . fromK
+
+-- shrinkSomeEffw :: SomeEffW r -> [SomeEffW r]
+-- shrinkSomeEffw (SomeEffW (Weaving e s nt f v)) = _
 
 
 ------------------------------------------------------------------------------
@@ -31,6 +68,81 @@ data family ExistentialFor (e :: Effect)
 -- of building generators for GADTs.
 class GArbitraryK (e :: Effect) (f :: LoT Effect -> Type) (r :: EffectRow) (a :: Type)  where
   garbitraryk :: [Gen (f (LoT2 (Sem r) a))]
+
+
+
+class GSubtermsK (e :: Effect) (f :: LoT Effect -> Type) r a b where
+  gsubtermsk :: f (LoT2 (Sem r) a) -> [b]
+
+instance GSubtermsK e f r a b => GSubtermsK e (M1 _1 _2 f) r a b where
+  gsubtermsk (M1 m) = gsubtermsk @e m
+
+instance (GSubtermsK e f r a b, GSubtermsK e g r a b) => GSubtermsK e (f :*: g) r a b where
+  gsubtermsk (f :*: g) = gsubtermsk @e f <> gsubtermsk @e g
+
+instance (GSubtermsK e f r a b, GSubtermsK e g r a b) => GSubtermsK e (f :+: g) r a b where
+  gsubtermsk (L1 f) = gsubtermsk @e f
+  gsubtermsk (R1 g) = gsubtermsk @e g
+
+instance (GSubtermsK e f r a b) => GSubtermsK e (c :=>: f) r a b where
+  gsubtermsk (SuchThat f) = gsubtermsk @e f
+
+
+-- instance (GSubtermsK e (SubstRep f (ExistentialFor e)) r a b) => GSubtermsK e (Exists Type f) r a b where
+--   gsubtermsk (Exists f) = gsubtermsk @e @(SubstRep f (ExistentialFor e)) @r a b $ substRep f
+
+instance GSubtermsK e (Exists Type f) r a b where
+  gsubtermsk _ = []
+
+instance {-# OVERLAPPING #-} GSubtermsK e (Field (Var0 ':@: Var1)) r a (Sem r a) where
+  gsubtermsk (Field f) = [f]
+
+instance GSubtermsK e (Field a) r b c where
+  gsubtermsk (Field f) = []
+
+instance GSubtermsK e U1 r a b where
+  gsubtermsk U1 = []
+
+instance GSubtermsK e V1 r a b where
+  gsubtermsk _ = []
+
+
+
+class GHoist (f :: LoT Effect -> Type) n a where
+  ghoist :: (forall x. m x -> n x) -> f (LoT2 m a) -> f (LoT2 n a)
+
+instance GHoist f n a => GHoist (M1 _1 _2 f) n a where
+  ghoist nt = M1 . ghoist nt . unM1
+
+instance (GHoist f n a, GHoist g n a) => GHoist (f :+: g) n a where
+  ghoist nt (L1 f) = L1 $ ghoist nt f
+  ghoist nt (R1 g) = R1 $ ghoist nt g
+
+instance (GHoist f n a, GHoist g n a) => GHoist (f :*: g) n a where
+  ghoist nt (f :*: g) = ghoist nt f :*: ghoist nt g
+
+instance (Interpret c (LoT2 n a), GHoist f n a) => GHoist (c :=>: f) n a where
+  ghoist nt (SuchThat x) = SuchThat $ ghoist nt x
+
+instance Arbitrary a => GHoist (Field (Var0 ':@: Var1)) n a where
+  ghoist nt (Field x) = Field $ nt x
+
+-- instance
+--     ( GHoist f n a
+--     , SubstRep' f (ExistentialFor e) (LoT2 (Sem r) a)
+--     ) => GArbitraryK e (Exists Type f) r a where
+--   garbitraryk = fmap (Exists . unsubstRep @_ @_ @_ @(ExistentialFor e)) <$>
+--     garbitraryk @e @(SubstRep f (ExistentialFor e)) @r @a
+
+-- instance {-# OVERLAPPING #-} GArbitraryK e (c1 :=>: (c2 :=>: f)) r a
+--     => GArbitraryK e ((c1 ':&: c2) :=>: f) r a where
+--   garbitraryk =
+--     fmap
+--       ((\(SuchThat (SuchThat x)) -> SuchThat x)
+--             :: (c1 :=>: (c2 :=>: f)) x -> ((c1 ':&: c2) :=>: f) x)
+--         <$> garbitraryk @e
+
+
 
 instance GArbitraryK e U1 r a where
   garbitraryk = pure $ pure U1
@@ -80,27 +192,28 @@ instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
 
 ------------------------------------------------------------------------------
 
-instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
-      => Arbitrary (Sem r a) where
-  arbitrary =
-    let terminal = [pure <$> arbitrary]
-     in sized $ \n ->
-          case n <= 1 of
-            True -> oneof terminal
-            False -> frequency $
-              [ (2,) $ do
-                  SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
-                  pure $ send e
-              , (8,) $ do
-                  SomeEff e <- arbitraryActionFromRow @r @r
-                  k <- liftArbitrary $ scale (`div` 2) arbitrary
-                  pure $ send e >>= k
-              ] <> fmap (1,) terminal
+-- instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
+--       => Arbitrary (Sem r a) where
+--   arbitrary =
+--     let terminal = [pure <$> arbitrary]
+--      in sized $ \n ->
+--           case n <= 1 of
+--             True -> oneof terminal
+--             False -> frequency $
+--               [ (2,) $ do
+--                   SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
+--                   pure $ send e
+--               , (8,) $ do
+--                   SomeEff e <- arbitraryActionFromRow @r @r
+--                   k <- liftArbitrary $ scale (`div` 2) arbitrary
+--                   pure $ injWeaving (Weaving e (Identity ()) _ _ _) >>= k
+--                   -- send (hoist (getCompose . fromPreimage) e) >>= k
+--               ] <> fmap (1,) terminal
 
 ------------------------------------------------------------------------------
 -- | @genEff \@e \@r \@a@ gets a generator capable of producing every
 -- well-typed GADT constructor of @e (Sem r) a@.
-genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Sem r) a)
+genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Compose ((,) [SomeEff r]) (SomeEffOfType r)) a)
 genEff = fmap toK $ oneof $ garbitraryk @e @(RepK e) @r
 
 
@@ -176,7 +289,7 @@ type TypesOf (e :: Effect) = GTypesOf (RepK e)
 data SomeAction e (r :: EffectRow) where
   SomeAction
       :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
-      => e (Sem r) a
+      => e (Compose ((,) [SomeEff r]) (SomeEffOfType r)) a
          -- ^
       -> SomeAction e r
          -- ^
@@ -189,14 +302,17 @@ instance Show (SomeAction e r) where
 -- | @'SomeEff' r@ is some action for some effect in the effect row @r@.
 data SomeEff (r :: EffectRow) where
   SomeEff
-      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (Sem r) a))
-      => e (Sem r) a
+      :: (Member e r, Eq a, Show a, CoArbitrary a, Show (e (SomeEffOfType r) a), GSubtermsK e (RepK e) r a (Sem r a), GenericK e, GHoist (RepK e) (Sem r) a)
+      => e (Compose ((,) [SomeEff r]) (SomeEffOfType r)) a
          -- ^
       -> SomeEff r
          -- ^
 
+-- shrinkSomeEff :: SomeEff r -> [SomeEff r]
+-- shrinkSomeEff (SomeEff e) = _
+
 instance Show (SomeEff r) where
-  show (SomeEff sse) = show sse
+  show (SomeEff sse) = "<no>"
 
 
 ------------------------------------------------------------------------------
