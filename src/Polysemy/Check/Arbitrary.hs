@@ -51,7 +51,13 @@ instance ArbitraryPreimage (Sem r a) where
     send $ hoistEff m
 
 
-hoistEff :: forall e r a. (GHoist (RepK e) (Shrinkable r) (Sem r) a, GenericK e) => e (Shrinkable r) a -> e (Sem r) a
+hoistEff
+    :: forall e r a
+     . ( GHoist (RepK e) (Shrinkable r) (Sem r) a
+       , GenericK e
+       )
+    => e (Shrinkable r) a
+    -> e (Sem r) a
 hoistEff = toK . ghoist (fromPreimage . getCompose) . fromK
 
 sendSomeEff :: SomeEff r -> Sem r ()
