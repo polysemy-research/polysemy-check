@@ -1,5 +1,6 @@
-{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE QuantifiedConstraints   #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+
 module Generics.Kind.Unexported where
 
 import Generics.Kind hiding (SubstRep)

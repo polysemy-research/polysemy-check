@@ -1,9 +1,9 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE QuantifiedConstraints   #-}
+{-# LANGUAGE TupleSections           #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 module Polysemy.Check.Arbitrary where
 
 import Control.Applicative (liftA2)
@@ -16,8 +16,6 @@ import Polysemy.Internal
 import Test.QuickCheck
 import Data.Foldable (for_)
 import Control.Monad (void)
-import GHC.Base (Any)
-import Unsafe.Coerce (unsafeCoerce)
 
 
 ------------------------------------------------------------------------------
@@ -85,17 +83,13 @@ instance GHoist (Field f) m n a =>
          GHoist (Field ('Kon ((->) c) ':@: f)) m n a where
   ghoist nt (Field x) = Field $ unField . ghoist @(Field f) nt . Field @f @(LoT2 m a) . x
 
-instance ( Interpret c (LoT2 n a) => Yo c m a
-         , Interpret c (LoT2 m a) => Yo c n a
+instance ( Interpret c (LoT2 m a) => InterpretSuchThat c n a
          , GHoist f m n a
          ) => GHoist (c :=>: f) m n a where
-  ghoist nt (SuchThat x) = with @(Yo c n a) $ SuchThat (ghoist nt x)
+  ghoist nt (SuchThat x) = with @(InterpretSuchThat c n a) $ SuchThat (ghoist nt x)
 
-class    Interpret c (LoT2 n a) => Yo c n a
-instance Interpret c (LoT2 n a) => Yo c n a
-
-class    Interpret c (n ':&&: a ':&&: 'LoT0) => Yo2 c n a
-instance Interpret c (n ':&&: a ':&&: 'LoT0) => Yo2 c n a
+class    Interpret c (LoT2 n a) => InterpretSuchThat c n a
+instance Interpret c (LoT2 n a) => InterpretSuchThat c n a
 
 
 
