@@ -72,27 +72,28 @@ prepropCommutative
     => ( ArbitraryEff r r
        , ArbitraryEff effs1 r
        , ArbitraryEff effs2 r
+       , ArbitraryEffOfType () r r
        )
     => (forall a. Sem r a -> IO (f a))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropCommutative lower =
-  forAllP' @_ @Property (arbitraryActionFromRow @r @r) $ \(SomeEff m1) ->
-  forAllP' @_ @Property (arbitraryActionFromRow @r @r) $ \(SomeEff m2) ->
+  forAllPreimage @(Sem r ()) @Property $ \m1 ->
+  forAllPreimage @(Sem r ()) @Property $ \m2 ->
   forAllP' @_ @Property (arbitraryActionFromRow @effs1 @r) $ \(SomeEff e1) ->
   forAllP' @_ @Property (arbitraryActionFromRow @effs2 @r) $ \(SomeEff e2) -> do
   counterexample "Effects are not commutative!" $
     counterexample "" $
-    counterexample ("k1  = " <> show m1) $
+    -- counterexample ("k1  = " <> show m1) $
     counterexample ("e1 = " <> show e1) $
     counterexample ("e2 = " <> show e2) $
-    counterexample ("k2  = " <> show m2) $
+    -- counterexample ("k2  = " <> show m2) $
     counterexample "" $
     counterexample "(k1 >> e1 >> e2 >> k2) /= (k1 >> e2 >> e1 >> k2)" $
       ioProperty $ do
-        r1 <- lower $ send (hoistEff m1) >> send (hoistEff e1) >> send (hoistEff e2) >> send (hoistEff m2)
-        r2 <- lower $ send (hoistEff m1) >> send (hoistEff e2) >> send (hoistEff e1) >> send (hoistEff m2)
+        r1 <- lower $ m1 >> send (hoistEff e1) >> send (hoistEff e2) >> m2
+        r2 <- lower $ m1 >> send (hoistEff e2) >> send (hoistEff e1) >> (m2)
         pure $ r1 === r2
 
 
@@ -105,6 +106,7 @@ class AllCommutative (effs :: EffectRow) r where
       :: ( forall a. Show a => Show (f a)
          , forall a. Eq a => Eq (f a)
          , Members effs r
+         , ArbitraryEffOfType () r r
          )
       => (forall a. Sem r a -> IO (f a))
       -> [Property]
