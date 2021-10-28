@@ -7,6 +7,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
 import Generics.Kind
+import Polysemy.Check.Arbitrary (Checkable)
 
 
 data MyEffect (m :: * -> *) a where
@@ -17,6 +18,7 @@ makeSem ''MyEffect
 
 deriving instance Show (MyEffect m a)
 deriveGenericK ''MyEffect
+instance Checkable MyEffect
 
 
 ------------------------------------------------------------------------------

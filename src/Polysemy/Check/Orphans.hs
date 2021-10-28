@@ -18,6 +18,8 @@ import Polysemy.Tagged
 import Polysemy.Trace
 import Polysemy.View
 import Polysemy.Writer
+import Polysemy.Check.Arbitrary (Checkable(..))
+import Test.QuickCheck (Arbitrary, CoArbitrary, arbitrary)
 
 deriveGenericK ''Embed
 deriveGenericK ''Error
@@ -33,6 +35,24 @@ deriveGenericK ''Tagged
 deriveGenericK ''Trace
 deriveGenericK ''View
 deriveGenericK ''Writer
+
+instance Arbitrary s => Checkable (State s)
+instance Arbitrary s => Checkable (Output s)
+instance (CoArbitrary s, Arbitrary s) => Checkable (Error s)
+-- instance (CoArbitrary s, Arbitrary s) => Checkable (Writer s)
+instance (Arbitrary s, CoArbitrary s) => Checkable (Reader s)
+instance Checkable (Input i)
+instance Checkable Fail
+instance Checkable Trace
+instance Checkable (Embed m) where
+  hoistEff = undefined
+  shrinkEff = undefined
+
+instance Show (Embed m r a) where
+  show _ = "yo"
+
+instance Arbitrary (IO a) where
+  arbitrary = undefined
 
 deriving instance Show s => Show (State s m a)
 deriving instance Show o => Show (Output o m a)

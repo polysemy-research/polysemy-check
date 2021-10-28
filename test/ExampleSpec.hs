@@ -12,6 +12,7 @@ import Polysemy.State
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
+import Polysemy.Check.Arbitrary (Checkable)
 
 
 data Stack s m a where
@@ -22,6 +23,7 @@ data Stack s m a where
 
 deriving instance Show s => Show (Stack s m a)
 deriveGenericK ''Stack
+instance Arbitrary s => Checkable (Stack s)
 
 makeSem ''Stack
 

@@ -9,6 +9,7 @@ import Polysemy.State
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Test.QuickCheck
+import Polysemy.Check.Arbitrary (Checkable)
 
 data Test m a where
   Test1 :: Test m ()
@@ -18,6 +19,7 @@ data Test m a where
 
 deriving instance Show (Test m a)
 deriveGenericK ''Test
+instance Checkable Test
 
 
 spec :: Spec
