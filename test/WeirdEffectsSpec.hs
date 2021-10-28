@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -ddump-to-file #-}
-{-# OPTIONS_GHC -ddump-tc-trace #-}
-
 module WeirdEffectsSpec where
 
 import Data.Typeable

@@ -3,6 +3,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 module Polysemy.Check.Arbitrary where
 
 import Control.Applicative (liftA2)
@@ -53,7 +54,7 @@ instance ArbitraryPreimage (Sem r a) where
 
 
 hoistEff :: forall e r a. (GHoist (RepK e) (Shrinkable r) (Sem r) a, GenericK e) => e (Shrinkable r) a -> e (Sem r) a
-hoistEff = undefined -- toK . ghoist (fromPreimage . getCompose) . fromK
+hoistEff = toK . ghoist (fromPreimage . getCompose) . fromK
 
 sendSomeEff :: SomeEff r -> Sem r ()
 sendSomeEff (SomeEff e) = void $ send $ hoistEff e
@@ -84,8 +85,20 @@ instance GHoist (Field f) m n a =>
          GHoist (Field ('Kon ((->) c) ':@: f)) m n a where
   ghoist nt (Field x) = Field $ unField . ghoist @(Field f) nt . Field @f @(LoT2 m a) . x
 
-instance (GHoist f m n a) => GHoist (c :=>: f) m n a where
-  ghoist nt (SuchThat x) = undefined -- SuchThat $ ghoist nt x
+instance ( Interpret c (LoT2 n a) => Yo c m a
+         , Interpret c (LoT2 m a) => Yo c n a
+         , GHoist f m n a
+         ) => GHoist (c :=>: f) m n a where
+  ghoist nt (SuchThat x) = with @(Yo c n a) $ SuchThat (ghoist nt x)
+
+class    Interpret c (LoT2 n a) => Yo c n a
+instance Interpret c (LoT2 n a) => Yo c n a
+
+class    Interpret c (n ':&&: a ':&&: 'LoT0) => Yo2 c n a
+instance Interpret c (n ':&&: a ':&&: 'LoT0) => Yo2 c n a
+
+
+
 
 -- instance (GHoist f m n a) => GHoist ('Kon ((~~) b) ':@: Var1 :=>: f) m n a where
 --   ghoist nt (SuchThat x) = SuchThat $ ghoist nt x
@@ -95,9 +108,6 @@ instance (GHoist f m n a) => GHoist (c :=>: f) m n a where
 
 class (SubstRep' f t (LoT2 m a), SubstRep' f t (LoT2 n a), GHoist (SubstRep f t) m n a) => GHoist_SubstRep f t m n a
 instance (SubstRep' f t (LoT2 m a), SubstRep' f t (LoT2 n a), GHoist (SubstRep f t) m n a) => GHoist_SubstRep f t m n a
-
-with :: forall c t. (c => t) -> (c => t)
-with x = x
 
 instance (forall x. GHoist_SubstRep f x m n a) => GHoist (Exists Type f) m n a where
   ghoist nt (Exists (x :: f (t ':&&: z))) =
@@ -167,22 +177,20 @@ instance (GArbitraryK e f r a) => GArbitraryK e (M1 _1 _2 f) r a where
 
 instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
       => Arbitrary (Sem r a) where
-  arbitrary = undefined
-    -- let terminal = [pure <$> arbitrary]
-    --  in sized $ \n ->
-    --       case n <= 1 of
-    --         True -> oneof terminal
-    --         False -> frequency $
-    --           [ (2,) $ do
-    --               SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
-    --               undefined
-    --               -- pure $ send e
-    --           , (8,) $ do
-    --               SomeEff e <- arbitraryActionFromRow @r @r
-    --               -- k <- liftArbitrary $ scale (`div` 2) arbitrary
-    --               undefined
-    --               -- pure $ send e >>= k
-    --           ] <> fmap (1,) terminal
+  arbitrary =
+    let terminal = [pure <$> arbitrary]
+     in sized $ \n ->
+          case n <= 1 of
+            True -> oneof terminal
+            False -> frequency $
+              [ (2,) $ do
+                  SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
+                  pure $ send $ hoistEff e
+              , (8,) $ do
+                  SomeEff e <- arbitraryActionFromRow @r @r
+                  k <- liftArbitrary $ scale (`div` 2) arbitrary
+                  pure $ send (hoistEff e) >>= k
+              ] <> fmap (1,) terminal
 
 ------------------------------------------------------------------------------
 -- | @genEff \@e \@r \@a@ gets a generator capable of producing every

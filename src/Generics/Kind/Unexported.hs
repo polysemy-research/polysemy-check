@@ -1,3 +1,5 @@
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 module Generics.Kind.Unexported where
 
 import Generics.Kind hiding (SubstRep)
@@ -30,11 +32,27 @@ instance SubstRep' f x xs => SubstRep' (M1 i c f) x xs where
   substRep   (M1 x) = M1 (substRep   x)
   unsubstRep (M1 x) = M1 (unsubstRep x)
 
-instance (Interpret (SubstAtom c x) xs, Interpret c (x ':&&: xs), SubstRep' f x xs)
+-- The context says that @Interpret (SubstAtom c x) xs@
+-- and @Interpret c (x ':&&: xs)@ are equivalent.
+-- But because @Interpret@ is a type family, and the right-hand side of
+-- a quantified constraint must be a class, we must use "class synonyms"
+-- @InterpretCons@ and @InterpretSubst@.
+instance ( Interpret (SubstAtom c x) xs => InterpretCons c x xs
+         , Interpret c (x ':&&: xs) => InterpretSubst c x xs
+         , SubstRep' f x xs )
          => SubstRep' (c :=>: f) x xs where
   type SubstRep (c :=>: f) x = (SubstAtom c x) :=>: (SubstRep f x)
-  substRep   (SuchThat x) = SuchThat (substRep   x)
-  unsubstRep (SuchThat x) = SuchThat (unsubstRep x)
+  substRep   (SuchThat x) = with @(InterpretSubst c x xs) $ SuchThat (substRep   x)
+  unsubstRep (SuchThat x) = with @(InterpretCons  c x xs) $ SuchThat (unsubstRep x)
+
+with :: forall c t. (c => t) -> (c => t)
+with x = x
+
+class    Interpret c (x ':&&: xs) => InterpretCons c x xs
+instance Interpret c (x ':&&: xs) => InterpretCons c x xs
+
+class    Interpret (SubstAtom c x) xs => InterpretSubst c x xs
+instance Interpret (SubstAtom c x) xs => InterpretSubst c x xs
 
 instance (Interpret (SubstAtom t x) xs ~ Interpret t (x ':&&: xs))
          => SubstRep' (Field t) x xs where
