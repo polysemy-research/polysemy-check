@@ -1,12 +1,16 @@
+-- {-# LANGUAGE NoAllowAmbiguousTypes        #-}
 {-# LANGUAGE QuantifiedConstraints   #-}
 {-# LANGUAGE TupleSections           #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
+{-# LANGUAGE DeriveGeneric #-}
 module Polysemy.Check.Arbitrary where
 
 import Control.Applicative (liftA2)
+import Control.Monad (void)
+import Data.Foldable (for_)
 import Data.Kind (Type)
 import GHC.Exts (type (~~))
 import Generics.Kind hiding (SubstRep)
@@ -14,8 +18,7 @@ import Generics.Kind.Unexported
 import Polysemy
 import Polysemy.Internal
 import Test.QuickCheck
-import Data.Foldable (for_)
-import Control.Monad (void)
+import GHC.Generics
 
 
 ------------------------------------------------------------------------------
@@ -29,26 +32,66 @@ import Control.Monad (void)
 data family ExistentialFor (e :: Effect)
 
 newtype Compose f g a = Compose { getCompose :: f (g a) }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Generic)
 
 instance Arbitrary (f (g a)) => Arbitrary (Compose f g a) where
   arbitrary = fmap Compose arbitrary
+  shrink = genericShrink
 
 instance ArbitraryEffOfType a r r => Arbitrary (SomeEffOfType r a) where
   arbitrary = arbitraryActionFromRowOfType @r @r @a
+  shrink (SomeEffOfType ectltlp_l_srsra) = SomeEffOfType <$> shrinkEff ectltlp_l_srsra
 
 instance ArbitraryEff r r => Arbitrary (SomeEff r) where
   arbitrary = arbitraryActionFromRow @r @r
+  shrink (SomeEff ectltlp_l_srsra) = SomeEff <$> shrinkEff ectltlp_l_srsra
+
+instance ArbitraryAction (TypesOf e) e r => Arbitrary (SomeAction e r) where
+  arbitrary = arbitraryAction @e @r
+  shrink (SomeAction ectltlp_l_srsra) = SomeAction <$> shrinkEff ectltlp_l_srsra
+
+instance (GenericK e, GArbitraryK e (RepK e) r a, GShrink (RepK e) r a)
+      => Arbitrary ((e :: Effect) (Shrinkable r) a) where
+  arbitrary = arbitraryActionOfType @e @a @r
+  shrink = shrinkEff
 
 class ArbitraryPreimage a where
   type Preimage a
   fromPreimage :: Preimage a -> a
+
+forAllPreimage
+    :: (Arbitrary (Preimage a), Show (Preimage a), ArbitraryPreimage a, Testable prop)
+    => (a -> prop)
+    -> Property
+forAllPreimage prop = forAllP $ prop . fromPreimage
+
+forAllP
+    :: (Arbitrary a, Show a, Testable prop)
+    => (a -> prop)
+    -> Property
+forAllP prop = forAllShrinkShow arbitrary shrink show $ prop
+
+forAllP'
+    :: (Arbitrary a, Show a, Testable prop)
+    => Gen a
+    -> (a -> prop)
+    -> Property
+forAllP' gen prop = forAllShrinkShow gen shrink show $ prop
 
 instance ArbitraryPreimage (Sem r a) where
   type Preimage (Sem r a) = ([SomeEff r], SomeEffOfType r a)
   fromPreimage (effs, SomeEffOfType m) = do
     for_ effs sendSomeEff
     send $ hoistEff m
+
+instance (GenericK e, GHoist (RepK e) (Shrinkable r) (Sem r) a)
+      => ArbitraryPreimage ((e :: Effect) (Sem r) a) where
+  type Preimage (e (Sem r) a) = e (Shrinkable r) a
+  fromPreimage = hoistEff
+
+
+shrinkEff :: (GenericK e, GShrink (RepK e) r a) => e (Shrinkable r) a -> [e (Shrinkable r) a]
+shrinkEff = fmap toK . gshrink . fromK
 
 
 hoistEff
@@ -78,7 +121,6 @@ instance (GHoist f m n a, GHoist g m n a) => GHoist (f :+: g) m n a where
 instance (GHoist f m n a, GHoist g m n a) => GHoist (f :*: g) m n a where
   ghoist nt (f :*: g) = ghoist nt f :*: ghoist nt g
 
-
 instance GHoist (Field (Var0 ':@: Var1)) m n a where
   ghoist nt (Field x) = Field $ nt x
 
@@ -96,6 +138,35 @@ instance ( Interpret c (LoT2 m a) => InterpretSuchThat c n a
 
 class    Interpret c (LoT2 n a) => InterpretSuchThat c n a
 instance Interpret c (LoT2 n a) => InterpretSuchThat c n a
+
+
+class GShrink (f :: LoT Effect -> Type) r a where
+  gshrink :: f (LoT2 (Shrinkable r) a) -> [f (LoT2 (Shrinkable r) a)]
+
+instance GShrink f r a => GShrink (M1 _1 _2 f) r a where
+  gshrink (M1 f) = M1 <$> gshrink f
+
+instance (GShrink f r a, GShrink g r a) => GShrink (f :*: g) r a where
+  gshrink (f :*: g) = fmap (f :*:) (gshrink g) <> fmap (:*: g) (gshrink f)
+
+instance (GShrink f r a, GShrink g r a) => GShrink (f :+: g) r a where
+  gshrink (L1 f) = L1 <$> gshrink f
+  gshrink (R1 g) = R1 <$> gshrink g
+
+instance GShrink U1 r a where
+  gshrink U1 = []
+
+instance GShrink V1 r a where
+  gshrink _ = []
+
+instance Arbitrary (Interpret c (LoT2 (Shrinkable r) a)) => GShrink (Field c) r a where
+  gshrink (Field c) = Field <$> shrink c
+
+instance GShrink f r a => GShrink (c :=>: f) r a where
+  gshrink (SuchThat f) = SuchThat <$> gshrink f
+
+instance GShrink (Exists Type f) r a where
+  gshrink (Exists _) = []
 
 
 
@@ -277,6 +348,7 @@ data SomeAction e (r :: EffectRow) where
          , Show (e (Shrinkable r) a)
          , GenericK e
          , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         , GShrink (RepK e) r a
          )
       => e (Shrinkable r) a
          -- ^
@@ -298,6 +370,7 @@ data SomeEff (r :: EffectRow) where
          , Show (e (Shrinkable r) a)
          , GenericK e
          , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         , GShrink (RepK e) r a
          )
       => e (Shrinkable r) a
          -- ^
@@ -319,6 +392,7 @@ data SomeEffOfType (r :: EffectRow) a where
          , Show (e (Shrinkable r) a)
          , GenericK e
          , GHoist (RepK e) (Shrinkable r) (Sem r) a
+         , GShrink (RepK e) r a
          )
       => e (Shrinkable r) a
          -- ^
@@ -366,6 +440,7 @@ instance
     , Member e r
     , GenericK e
     , GHoist (RepK e) (Shrinkable r) (Sem r) a
+    , GShrink (RepK e) r a
     )
     => ArbitraryEffOfType a (e ': es) r
     where
@@ -394,6 +469,7 @@ instance
     , GArbitraryK e (RepK e) r a
     , GenericK e
     , GHoist (RepK e) (Shrinkable r) (Sem r) a
+    , GShrink (RepK e) r a
     )
     => ArbitraryAction (a : as) e r
     where

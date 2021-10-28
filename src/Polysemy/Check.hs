@@ -77,13 +77,12 @@ prepropCommutative
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
-prepropCommutative lower = property @(Gen Property) $ do
-  SomeEff m1 <- arbitraryActionFromRow @r @r
-  SomeEff e1 <- arbitraryActionFromRow @effs1 @r
-  SomeEff e2 <- arbitraryActionFromRow @effs2 @r
-  SomeEff m2 <- arbitraryActionFromRow @r @r
-  pure $
-    counterexample "Effects are not commutative!" $
+prepropCommutative lower =
+  forAllP' @_ @Property (arbitraryActionFromRow @r @r) $ \(SomeEff m1) ->
+  forAllP' @_ @Property (arbitraryActionFromRow @r @r) $ \(SomeEff m2) ->
+  forAllP' @_ @Property (arbitraryActionFromRow @effs1 @r) $ \(SomeEff e1) ->
+  forAllP' @_ @Property (arbitraryActionFromRow @effs2 @r) $ \(SomeEff e2) -> do
+  counterexample "Effects are not commutative!" $
     counterexample "" $
     counterexample ("k1  = " <> show m1) $
     counterexample ("e1 = " <> show e1) $
