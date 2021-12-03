@@ -83,10 +83,10 @@ prepropCommutative
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropCommutative lower = property @(Gen Property) $ do
-  SomeEff m1 <- arbitraryActionFromRow @r @r
-  SomeEff e1 <- arbitraryActionFromRow @effs1 @r
-  SomeEff e2 <- arbitraryActionFromRow @effs2 @r
-  SomeEff m2 <- arbitraryActionFromRow @r @r
+  SomeProg m1 <- arbitraryProgram @r @r
+  SomeProg e1 <- arbitraryProgram @effs1 @r
+  SomeProg e2 <- arbitraryProgram @effs2 @r
+  SomeProg m2 <- arbitraryProgram @r @r
   pure $
     counterexample "Effects are not commutative!" $
     counterexample "" $
@@ -97,9 +97,17 @@ prepropCommutative lower = property @(Gen Property) $ do
     counterexample "" $
     counterexample "(k1 >> e1 >> e2 >> k2) /= (k1 >> e2 >> e1 >> k2)" $
       ioProperty $ do
-        r1 <- lower $ send m1 >> send e1 >> send e2 >> send m2
-        r2 <- lower $ send m1 >> send e2 >> send e1 >> send m2
+        r1 <- lower $ m1 >> e1 >> e2 >> m2
+        r2 <- lower $ m1 >> e2 >> e1 >> m2
         pure $ r1 === r2
+
+
+arbitraryProgram
+    :: forall (effs :: EffectRow) r
+     . ArbitraryEff effs r
+    => Gen (SomeProg r)
+arbitraryProgram = undefined
+
 
 
 class AllCommutative (effs :: EffectRow) r where
@@ -151,24 +159,24 @@ prepropLaw
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropLaw g labeler lower = property @(Gen Property) $ do
-  SomeEff pre <- arbitraryActionFromRow @effs @r
+  SomeProg pre <- arbitraryProgram @effs @r
   (m1, m2) <- g
-  SomeEff post <- arbitraryActionFromRow @effs @r
+  SomeProg post <- arbitraryProgram @effs @r
   pure $
     counterexample ("before = " <> show pre) $
     counterexample ("after  = " <> show post) $
       ioProperty $ do
         a1 <-
           lower $ do
-            void $ send pre
+            void pre
             a1 <- m1
-            r <- send post
+            r <- post
             pure (a1, r)
         a2 <-
           lower $ do
-            void $ send pre
+            void pre
             a2 <- m2
-            r <- send post
+            r <- post
             pure (a2, r)
         pure $ maybe property label (labeler $ fmap fst a1) $ a1 === a2
 
@@ -210,6 +218,10 @@ prepropEquivalent int1 int2 = property $ do
     a2 <- int2 sem
     pure $ a1 === a2
 
+
+data SomeProg r where
+  SomeProg :: (Show a, Eq a) => e (Sem r) a -> SomeProg r
+  PureProg :: (Show a, Eq a) => a -> SomeProg r
 
 newtype SomeSem effs a = SomeSem
   { _getSomeSem :: forall r. (Inject effs r) => Sem r a

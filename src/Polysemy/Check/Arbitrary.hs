@@ -88,20 +88,29 @@ instance (Arbitrary a, ArbitraryEff r r, ArbitraryEffOfType a r r)
           case n <= 1 of
             True -> oneof terminal
             False -> frequency $
-              [ (2,) $ do
-                  SomeEffOfType e <- arbitraryActionFromRowOfType @r @r @a
-                  pure $ send e
-              , (8,) $ do
-                  SomeEff e <- arbitraryActionFromRow @r @r
-                  k <- liftArbitrary $ scale (`div` 2) arbitrary
-                  pure $ send e >>= k
+              [ (2,) $
+                case arbitraryActionFromRowOfType @r @r @a of
+                  Just gen -> do
+                    SomeEffOfType e <- gen
+                    pure $ send e
+                  Nothing -> oneof terminal
+              , (8,) $
+                  case arbitraryActionFromRow @r @r of
+                    Just gen -> do
+                      SomeEff e <- gen
+                      k <- liftArbitrary $ scale (`div` 2) arbitrary
+                      pure $ send e >>= k
+                    Nothing -> oneof terminal
               ] <> fmap (1,) terminal
 
 ------------------------------------------------------------------------------
 -- | @genEff \@e \@r \@a@ gets a generator capable of producing every
 -- well-typed GADT constructor of @e (Sem r) a@.
-genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Gen (e (Sem r) a)
-genEff = fmap toK $ oneof $ garbitraryk @e @(RepK e) @r
+genEff :: forall e r a. (GenericK e, GArbitraryK e (RepK e) r a) => Maybe (Gen (e (Sem r) a))
+genEff =
+  case garbitraryk @e @(RepK e) @r of
+    [] -> Nothing
+    xs -> Just $ fmap toK $ oneof xs
 
 
 ------------------------------------------------------------------------------
@@ -119,7 +128,7 @@ arbitraryAction = oneof $ genSomeAction @(TypesOf e) @e @r
 arbitraryActionOfType
     :: forall e a r
      . (GenericK e, GArbitraryK e (RepK e) r a)
-    => Gen (e (Sem r) a)
+    => Maybe (Gen (e (Sem r) a))
        -- ^
 arbitraryActionOfType = genEff @e @r @a
 
@@ -129,9 +138,12 @@ arbitraryActionOfType = genEff @e @r @a
 arbitraryActionFromRow
     :: forall (effs :: EffectRow) r
      . ArbitraryEff effs r
-    => Gen (SomeEff r)
+    => Maybe (Gen (SomeEff r))
        -- ^
-arbitraryActionFromRow = oneof $ genSomeEff @effs @r
+arbitraryActionFromRow =
+  case genSomeEff @effs @r of
+    [] -> Nothing
+    xs -> Just $ oneof xs
 
 
 ------------------------------------------------------------------------------
@@ -139,9 +151,12 @@ arbitraryActionFromRow = oneof $ genSomeEff @effs @r
 arbitraryActionFromRowOfType
     :: forall (effs :: EffectRow) r a
      . ArbitraryEffOfType a effs r
-    => Gen (SomeEffOfType r a)
+    => Maybe (Gen (SomeEffOfType r a))
        -- ^
-arbitraryActionFromRowOfType = oneof $ genSomeEffOfType @a @effs @r
+arbitraryActionFromRowOfType =
+  case genSomeEffOfType @a @effs @r of
+    [] -> Nothing
+    xs -> Just $ oneof xs
 
 
 ------------------------------------------------------------------------------
@@ -277,5 +292,9 @@ instance
     )
     => ArbitraryAction (a : as) e r
     where
-  genSomeAction = (fmap SomeAction $ genEff @e @r @a) : genSomeAction @as @e @r
+  genSomeAction =
+    let rest = genSomeAction @as @e @r
+     in case genEff @e @r @a of
+          Just gen -> fmap SomeAction gen : rest
+          Nothing -> rest
 
