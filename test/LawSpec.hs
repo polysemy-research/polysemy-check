@@ -16,24 +16,24 @@ spec = do
   describe "pure state" $ do
     prop "put >> put = put" $ do
       s <- arbitrary
-      pure $ putPutLaw $ runPureState s
+      pure $ putPutLaw noLabel $ runPureState s
     prop "get >>= put = pure ()" $ do
       s <- arbitrary
-      pure $ getPutLaw $ runPureState s
+      pure $ getPutLaw noLabel $ runPureState s
     prop "put >> get = put >> pure" $ do
       s <- arbitrary
-      pure $ putGetLaw $ runPureState s
+      pure $ putGetLaw noLabel $ runPureState s
 
   describe "io state" $ do
     prop "put >> put = put" $ do
       s <- arbitrary
-      pure $ putPutLaw $ runIOState s
+      pure $ putPutLaw noLabel $ runIOState s
     prop "get >>= put = pure ()" $ do
       s <- arbitrary
-      pure $ getPutLaw $ runIOState s
+      pure $ getPutLaw noLabel $ runIOState s
     prop "put >> get = put >> pure" $ do
       s <- arbitrary
-      pure $ putGetLaw $ runIOState s
+      pure $ putGetLaw noLabel $ runIOState s
 
 
 type LawConstraints f effs s r =
@@ -52,7 +52,8 @@ putPutLaw
      . ( res ~ ()
        , LawConstraints f effs s r
        )
-    => (forall a. Sem r (res, a) -> IO (f (res, a)))
+    => (f res -> Maybe String)
+    -> (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
 putPutLaw = prepropLaw @effs $ do
   s1 <- arbitrary
@@ -71,7 +72,8 @@ getPutLaw
      . ( res ~ ()
        , LawConstraints f effs s r
        )
-    => (forall a. Sem r (res, a) -> IO (f (res, a)))
+    => (f res -> Maybe String)
+    -> (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
 getPutLaw = prepropLaw @effs $ do
   pure
@@ -85,7 +87,8 @@ putGetLaw
      . ( res ~ s
        , LawConstraints f effs s r
        )
-    => (forall a. Sem r (res, a) -> IO (f (res, a)))
+    => (f res -> Maybe String)
+    -> (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
 putGetLaw = prepropLaw @effs $ do
   s <- arbitrary

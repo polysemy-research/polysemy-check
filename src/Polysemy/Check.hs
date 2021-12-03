@@ -18,6 +18,10 @@ module Polysemy.Check
   , SomeEff (..)
   , SomeEffOfType (..)
 
+  -- * Common labeling functions
+  , constructorLabel
+  , noLabel
+
     -- * Support for Existential Types
   , ExistentialFor
 
@@ -43,6 +47,7 @@ import Polysemy.Check.Orphans ()
 import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Test.QuickCheck
+import Data.Data (Data, showConstr, toConstr)
 
 
 ------------------------------------------------------------------------------
@@ -134,15 +139,18 @@ prepropLaw
        )
     => ( Eq a
        , Show a
+       , Functor f
        , ArbitraryEff effs r
        )
     => Gen (Sem r a, Sem r a)
        -- ^ A generator for two equivalent programs.
+    -> (f a -> Maybe String)
+       -- ^ How to label the results for QuickCheck coverage.
     -> (forall z. Sem r (a, z) -> IO (f (a, z)))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
-prepropLaw g lower = property @(Gen Property) $ do
+prepropLaw g labeler lower = property @(Gen Property) $ do
   SomeEff pre <- arbitraryActionFromRow @effs @r
   (m1, m2) <- g
   SomeEff post <- arbitraryActionFromRow @effs @r
@@ -162,7 +170,19 @@ prepropLaw g lower = property @(Gen Property) $ do
             a2 <- m2
             r <- send post
             pure (a2, r)
-        pure $ a1 === a2
+        pure $ maybe property label (labeler $ fmap fst a1) $ a1 === a2
+
+
+------------------------------------------------------------------------------
+-- | Label an example with its data constructor.
+constructorLabel :: Data a => a -> Maybe String
+constructorLabel = Just . showConstr . toConstr
+
+
+------------------------------------------------------------------------------
+-- | Don't give a label to this example.
+noLabel :: a -> Maybe String
+noLabel = const Nothing
 
 
 ------------------------------------------------------------------------------
