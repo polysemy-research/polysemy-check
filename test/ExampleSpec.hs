@@ -29,44 +29,40 @@ makeSem ''Stack
 spec :: Spec
 spec = do
   describe "Laws" $ do
-    let law x = prepropLaw @'[Stack Int] x (constructorLabel . fst) $ pure . run . runStack []
+    let law x = prepropLaw @'[Stack Int] x (Just $ constructorLabel . fst) $ pure . run . runStack []
 
     prop "push >> pop is pure" $ do
       law $ do
         s <- arbitrary
-        pure
-          ( push s >> pop
-          , pure $ Just s
-          )
+        pure $ simpleLaw
+          (push s >> pop)
+          (pure $ Just s)
 
     prop "pop >> push is id" $ do
       law $
-        pure
-          ( pop >>= maybe (pure ()) push
-          , pure ()
-          )
+        pure $ simpleLaw
+          (pop >>= maybe (pure ()) push)
+          (pure ())
+
 
     prop "removeAll sets size to 0" $ do
       law $
-        pure
-          ( removeAll >> size
-          , removeAll >> pure 0
-          )
+        pure $ simpleLaw
+          (removeAll >> size)
+          (removeAll >> pure 0)
 
     prop "push increases size by 1" $ do
       law $ do
         s <- arbitrary
-        pure
-          ( push s >> size
-          , fmap (+1) size <* push s
-          )
+        pure $ simpleLaw
+          (push s >> size)
+          (fmap (+1) size <* push s)
 
     prop "pop decreases size by 1" $ do
       law $ do
-        pure
-          ( pop >> size
-          , fmap (max 0 . subtract 1) size <* pop
-          )
+        pure $ simpleLaw
+          (pop >> size)
+          (fmap (max 0 . subtract 1) size <* pop)
 
 
   describe "Equivalence" $ do

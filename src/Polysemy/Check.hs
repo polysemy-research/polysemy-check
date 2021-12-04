@@ -7,6 +7,10 @@ module Polysemy.Check
   , prepropEquivalent
   , prepropLaw
 
+    -- * Law Constructors
+  , Law (..)
+  , simpleLaw
+
     -- * Generators for Effects
   , arbitraryAction
   , arbitraryActionOfType
@@ -20,7 +24,6 @@ module Polysemy.Check
 
   -- * Common labeling functions
   , constructorLabel
-  , noLabel
 
     -- * Support for Existential Types
   , ExistentialFor
@@ -126,6 +129,30 @@ instance (ArbitraryEff r r, ArbitraryEff es r, ArbitraryEff '[e] r, AllCommutati
 
 
 ------------------------------------------------------------------------------
+-- | Data structure containing programs that should be equal, and under which
+-- circumstances.
+data Law r z a = Law
+  { lawLhs      :: Sem r a
+    -- ^ 'lawLhs' and 'lawRhs' are being asserted as equal.
+  , lawRhs      :: Sem r a
+    -- ^ 'lawLhs' and 'lawRhs' are being asserted as equal.
+  , lawPrelude  :: [Sem r ()]
+    -- ^ A set of actions to possibly run before checking equality. Useful for
+    -- ensuring the existence of something being tested.
+  , lawPostlude :: [Sem r z]
+    -- ^ A set of actions to possibly run after checking equality. Useful for
+    -- checking the existence after something was created.
+  }
+
+
+------------------------------------------------------------------------------
+-- | Like 'Law', but for the common case when you don't need a custom prelude
+-- or postlude.
+simpleLaw :: Sem r a -> Sem r a -> Law r () a
+simpleLaw lhs rhs = Law lhs rhs [] []
+
+
+------------------------------------------------------------------------------
 -- | Prove that two programs in @r@ are equivalent under a given
 -- interpretation. This is useful for proving laws about particular effects (or
 -- stacks of effects).
@@ -133,7 +160,7 @@ instance (ArbitraryEff r r, ArbitraryEff es r, ArbitraryEff '[e] r, AllCommutati
 -- For example, any lawful interpretation of @State@ must satisfy the @put s1
 -- >> put s2 = put s2@ law.
 prepropLaw
-    :: forall effs r a f
+    :: forall effs x r a f
      . ( (forall z. Eq z => Eq (f z))
        , (forall z. Show z => Show (f z))
        )
@@ -141,48 +168,70 @@ prepropLaw
        , Show a
        , Functor f
        , ArbitraryEff effs r
+       , Eq x
+       , Show x
        )
-    => Gen (Sem r a, Sem r a)
+    => Gen (Law r x a)
        -- ^ A generator for two equivalent programs.
-    -> (f a -> Maybe String)
+    -> Maybe (f a -> String)
        -- ^ How to label the results for QuickCheck coverage.
     -> (forall z. Sem r (a, z) -> IO (f (a, z)))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
        -- stacks can be lifted into 'IO' via 'pure' after the final 'run'.
     -> Property
 prepropLaw g labeler lower = property @(Gen Property) $ do
-  SomeEff pre <- arbitraryActionFromRow @effs @r
-  (m1, m2) <- g
-  SomeEff post <- arbitraryActionFromRow @effs @r
+  Law lhs rhs mprel mpost <- g
+  SomeEff pre1 <- arbitraryActionFromRow @effs @r
+  prel <- maybeOneof mprel
+  SomeEff pre2 <- arbitraryActionFromRow @effs @r
+  SomeEff post1 <- arbitraryActionFromRow @effs @r
+  post <- maybeOneof mpost
+  SomeEff post2 <- arbitraryActionFromRow @effs @r
   pure $
-    counterexample ("before = " <> show pre) $
-    counterexample ("after  = " <> show post) $
+    counterexample ("before1 = " <> show pre1) $
+    counterexample ("before2 = " <> show pre2) $
+    counterexample ("after1  = " <> show post1) $
+    counterexample ("after2  = " <> show post2) $
       ioProperty $ do
         a1 <-
           lower $ do
-            void $ send pre
-            a1 <- m1
-            r <- send post
-            pure (a1, r)
+            void $ send pre1
+            void $ prel
+            void $ send pre2
+            a1 <- lhs
+            void $ send post1
+            z <- post
+            r <- send post2
+            pure (a1, (z, r))
         a2 <-
           lower $ do
-            void $ send pre
-            a2 <- m2
-            r <- send post
-            pure (a2, r)
-        pure $ maybe property label (labeler $ fmap fst a1) $ a1 === a2
+            void $ send pre1
+            void prel
+            void $ send pre2
+            a2 <- rhs
+            void $ send post1
+            z <- post
+            r <- send post2
+            pure (a2, (z, r))
+        pure
+          $ maybe property (\lbl -> label $ lbl $ fmap fst a1) labeler
+          $ a1 === a2
+
+
+maybeOneof :: [Sem r a] -> Gen (Sem r (Maybe a))
+maybeOneof [] = pure $ pure Nothing
+maybeOneof res = do
+  chance <- elements @Int [0..9]
+  case chance < 8 of
+    True -> fmap (fmap Just) $ elements res
+    False -> pure $ pure Nothing
+
 
 
 ------------------------------------------------------------------------------
 -- | Label an example with its data constructor.
-constructorLabel :: Data a => a -> Maybe String
-constructorLabel = Just . showConstr . toConstr
-
-
-------------------------------------------------------------------------------
--- | Don't give a label to this example.
-noLabel :: a -> Maybe String
-noLabel = const Nothing
+constructorLabel :: Data a => a -> String
+constructorLabel = showConstr . toConstr
 
 
 ------------------------------------------------------------------------------

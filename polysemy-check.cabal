@@ -68,6 +68,7 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      BigKeySpec
       CommutativeSpec
       CoverageSpec
       EquivSpec
