@@ -58,13 +58,12 @@ putPutLaw
 putPutLaw = prepropLaw @effs $ do
   s1 <- arbitrary
   s2 <- arbitrary
-  pure
+  pure $ simpleLaw
     ( do
         put s1
-        put s2
-    , do
-        put s2
-    )
+        put s2)
+    ( do
+        put s2)
 
 
 getPutLaw
@@ -76,10 +75,9 @@ getPutLaw
     -> (forall a. Sem r (res, a) -> IO (f (res, a)))
     -> Property
 getPutLaw = prepropLaw @effs $ do
-  pure
-    ( get >>= put
-    , pure ()
-    )
+  pure $ simpleLaw
+    (get >>= put)
+    (pure ())
 
 
 putGetLaw
@@ -92,14 +90,13 @@ putGetLaw
     -> Property
 putGetLaw = prepropLaw @effs $ do
   s <- arbitrary
-  pure
+  pure $ simpleLaw
     ( do
         put s
-        get
-    , do
+        get)
+    ( do
         put s
-        pure s
-    )
+        pure s)
 
 
 runPureState :: Int -> Sem '[State Int] a -> IO (Int, a)
