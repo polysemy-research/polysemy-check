@@ -160,7 +160,7 @@ simpleLaw lhs rhs = Law lhs rhs [] []
 -- For example, any lawful interpretation of @State@ must satisfy the @put s1
 -- >> put s2 = put s2@ law.
 prepropLaw
-    :: forall effs r a f x
+    :: forall effs x r a f
      . ( (forall z. Eq z => Eq (f z))
        , (forall z. Show z => Show (f z))
        )
