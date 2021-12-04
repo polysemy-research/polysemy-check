@@ -20,7 +20,6 @@ module Polysemy.Check
 
   -- * Common labeling functions
   , constructorLabel
-  , noLabel
 
     -- * Support for Existential Types
   , ExistentialFor
@@ -144,7 +143,7 @@ prepropLaw
        )
     => Gen (Sem r a, Sem r a)
        -- ^ A generator for two equivalent programs.
-    -> (f a -> Maybe String)
+    -> Maybe (f a -> String)
        -- ^ How to label the results for QuickCheck coverage.
     -> (forall z. Sem r (a, z) -> IO (f (a, z)))
        -- ^ An interpreter for the effect stack down to 'IO'. Pure effect
@@ -170,19 +169,15 @@ prepropLaw g labeler lower = property @(Gen Property) $ do
             a2 <- m2
             r <- send post
             pure (a2, r)
-        pure $ maybe property label (labeler $ fmap fst a1) $ a1 === a2
+        pure
+          $ maybe property (\lbl -> label $ lbl $ fmap fst a1) labeler
+          $ a1 === a2
 
 
 ------------------------------------------------------------------------------
 -- | Label an example with its data constructor.
-constructorLabel :: Data a => a -> Maybe String
-constructorLabel = Just . showConstr . toConstr
-
-
-------------------------------------------------------------------------------
--- | Don't give a label to this example.
-noLabel :: a -> Maybe String
-noLabel = const Nothing
+constructorLabel :: Data a => a -> String
+constructorLabel = showConstr . toConstr
 
 
 ------------------------------------------------------------------------------

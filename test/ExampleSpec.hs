@@ -29,7 +29,7 @@ makeSem ''Stack
 spec :: Spec
 spec = do
   describe "Laws" $ do
-    let law x = prepropLaw @'[Stack Int] x (constructorLabel . fst) $ pure . run . runStack []
+    let law x = prepropLaw @'[Stack Int] x (Just $ constructorLabel . fst) $ pure . run . runStack []
 
     prop "push >> pop is pure" $ do
       law $ do
