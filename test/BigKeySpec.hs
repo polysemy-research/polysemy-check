@@ -63,9 +63,9 @@ deleteGetLaw bug prel =
 
 
 spec :: Spec
-spec = modifyMaxSize (const 100000) $ do
+spec = do
   describe "without prelude" $ do
-    prop "with bug"    $ deleteGetLaw HasBug $ \_ _ -> []
+    -- prop "with bug"    $ deleteGetLaw HasBug $ \_ _ -> []
     prop "without bug" $ deleteGetLaw NoBug $ \_ _ -> []
 
   describe "with prelude" $ do
