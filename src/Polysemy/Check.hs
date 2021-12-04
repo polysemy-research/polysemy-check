@@ -131,6 +131,8 @@ instance (ArbitraryEff r r, ArbitraryEff es r, ArbitraryEff '[e] r, AllCommutati
 ------------------------------------------------------------------------------
 -- | Data structure containing programs that should be equal, and under which
 -- circumstances.
+--
+-- @since 0.9.0.0
 data Law r z a = Law
   { lawLhs      :: Sem r a
     -- ^ 'lawLhs' and 'lawRhs' are being asserted as equal.
@@ -148,6 +150,8 @@ data Law r z a = Law
 ------------------------------------------------------------------------------
 -- | Like 'Law', but for the common case when you don't need a custom prelude
 -- or postlude.
+--
+-- @since 0.9.0.0
 simpleLaw :: Sem r a -> Sem r a -> Law r () a
 simpleLaw lhs rhs = Law lhs rhs [] []
 
@@ -230,6 +234,8 @@ maybeOneof res = do
 
 ------------------------------------------------------------------------------
 -- | Label an example with its data constructor.
+--
+-- @since 0.9.0.0
 constructorLabel :: Data a => a -> String
 constructorLabel = showConstr . toConstr
 

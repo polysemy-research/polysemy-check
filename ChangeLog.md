@@ -1,5 +1,11 @@
 # Changelog for polysemy-check
 
+## v0.9.0.0 (2021-12-03)
+
+- `prepropLaw` now generates a new `Law` record, allowing for better control
+    over the program prelude and postludes
+- `prepropLaw` now takes a labeler, for running QuickCheck coverage
+
 ## v0.8.1.0 (2021-10-21)
 
 - Added a new function, `prepropAllCommutative` which ensures every effect
