@@ -1,6 +1,6 @@
 module Generics.Kind.Unexported where
 
-import Generics.Kind hiding (SubstRep)
+import Generics.Kind hiding (SubstRep, SubstRep')
 
 
 class SubstRep' (f :: LoT (t -> k) -> *) (x :: t) (xs :: LoT k) where
@@ -41,11 +41,4 @@ instance (Interpret (SubstAtom t x) xs ~ Interpret t (x ':&&: xs))
   type SubstRep (Field t) x = Field (SubstAtom t x)
   substRep   (Field x) = Field x
   unsubstRep (Field x) = Field x
-
-type family SubstAtom (f :: Atom (t -> k) d) (x :: t) :: Atom k d where
-  SubstAtom ('Var 'VZ)     x = 'Kon x
-  SubstAtom ('Var ('VS v)) x = 'Var v
-  SubstAtom ('Kon t)       x = 'Kon t
-  SubstAtom (t1 ':@: t2)   x = (SubstAtom t1 x) ':@: (SubstAtom t2 x)
-  SubstAtom (t1 ':&: t2)   x = (SubstAtom t1 x) ':&: (SubstAtom t2 x)
 

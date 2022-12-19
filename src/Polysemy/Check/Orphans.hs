@@ -15,7 +15,6 @@ import Polysemy.Resource
 import Polysemy.State
 import Polysemy.Tagged
 import Polysemy.Trace
-import Polysemy.View
 import Polysemy.Writer
 
 deriveGenericK ''Embed
@@ -30,7 +29,6 @@ deriveGenericK ''Resource
 deriveGenericK ''State
 deriveGenericK ''Tagged
 deriveGenericK ''Trace
-deriveGenericK ''View
 deriveGenericK ''Writer
 
 deriving instance Show s => Show (State s (Sem r) a)

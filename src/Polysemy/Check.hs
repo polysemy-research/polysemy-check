@@ -47,7 +47,6 @@ import Generics.Kind.TH (deriveGenericK)
 import Polysemy
 import Polysemy.Check.Arbitrary
 import Polysemy.Check.Orphans ()
-import Polysemy.Internal
 import Polysemy.Internal.Union.Inject (Inject, inject)
 import Test.QuickCheck
 import Data.Data (Data, showConstr, toConstr)

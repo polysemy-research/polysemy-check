@@ -7,7 +7,7 @@ module Polysemy.Check.Arbitrary where
 import Control.Applicative (liftA2)
 import Data.Kind (Type)
 import GHC.Exts (type (~~))
-import Generics.Kind hiding (SubstRep)
+import Generics.Kind hiding (SubstRep, SubstRep')
 import Generics.Kind.Unexported
 import Polysemy
 import Polysemy.Internal

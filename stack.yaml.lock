@@ -5,13 +5,6 @@
 
 packages:
 - completed:
-    hackage: polysemy-1.7.0.0@sha256:c972f33191113e2fe6809ea1cda24a6cabfeed2f115b3be0137dee7c65d08293,5977
-    pantry-tree:
-      size: 4577
-      sha256: 78c733f5dde13340e880bbb883dc64af948f6449da3a4025811cdc79c204dfde
-  original:
-    hackage: polysemy-1.7.0.0
-- completed:
     hackage: polysemy-plugin-0.4.2.0@sha256:1dbcb892bb866926994dadafeb93e76ae4a6625dc3ae9ca0f4f419ee85cb2f7b,3154
     pantry-tree:
       size: 1229
@@ -20,7 +13,7 @@ packages:
     hackage: polysemy-plugin-0.4.2.0
 snapshots:
 - completed:
-    size: 534126
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/31.yaml
-    sha256: 637fb77049b25560622a224845b7acfe81a09fdb6a96a3c75997a10b651667f6
-  original: lts-16.31
+    size: 586296
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/18.yaml
+    sha256: 63539429076b7ebbab6daa7656cfb079393bf644971156dc349d7c0453694ac2
+  original: lts-18.18
