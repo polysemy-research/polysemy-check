@@ -1,5 +1,11 @@
 # Changelog for polysemy-check
 
+## v0.9.0.1 (2022-12-19)
+
+- Updated to latest `kind-generics` library
+- Removed orphan instances for `View` effect, which is no longer in polysemy
+  HEAD
+
 ## v0.9.0.0 (2021-12-03)
 
 - `prepropLaw` now generates a new `Law` record, allowing for better control
